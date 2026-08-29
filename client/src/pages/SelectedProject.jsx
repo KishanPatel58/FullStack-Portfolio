@@ -24,7 +24,7 @@ const SelectedProject = () => {
             <div className='w-[90%] flex flex-wrap justify-start items-start gap-1 mt-2'>
                 {
                     selectedProject.techStack.map((stack, idx) => (
-                        <span key={idx} className='flex items-center justify-center gap-2 border relative w-auto h-auto rounded-full p-1'>
+                        <span key={idx} className='flex items-center justify-center gap-1 border relative w-auto h-auto rounded-full p-1'>
                             <img src={stack.icon} alt={stack.name} className='w-4 h-4 rounded-full' />
                             <p className='text-xs'>{stack.name}</p>
                         </span>

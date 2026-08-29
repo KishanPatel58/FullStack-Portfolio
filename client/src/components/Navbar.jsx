@@ -14,7 +14,8 @@ const Navbar = () => {
     const navLinks = [
         { name: "Home", to: "/" },
         { name: "About", to: "/about" },
-        { name: "Projects", to: "/projects" }
+        { name: "Projects", to: "/projects" },
+        { name: "Contact", to: "/contact" }
     ];
 
     const socialLinks = [
@@ -416,7 +417,7 @@ const Navbar = () => {
                             delay: menuOpen ? 0.5 : 0
                         }}
                         className="
-                            mt-20
+                            mt-8
                             pl-9
                             sm:pl-16
                             mb-[10%]
