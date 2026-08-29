@@ -6,7 +6,8 @@ const MyContext = createContext();
 export const MyContextProvider = ({ children }) => {
 
     const Skills = [
-        {   category: "Frontend",
+        {
+            category: "Frontend",
             skills: [
                 { name: "HTML", icon: html, percentage: "70" },
                 { name: "CSS", icon: css, percentage: "60" },
@@ -15,26 +16,30 @@ export const MyContextProvider = ({ children }) => {
                 { name: "React", icon: react, percentage: "75" }
             ]
         },
-        { category: "Backend",
+        {
+            category: "Backend",
             skills: [
-                { name: "Node", icon: node, percentage: "55" }, 
+                { name: "Node", icon: node, percentage: "55" },
                 { name: "Express", icon: express, percentage: "65" }
             ]
         },
-        { category: "Database",
+        {
+            category: "Database",
             skills: [
                 { name: "MongoDB", icon: mongodb, percentage: "55" },
                 { name: "PostgreSql", icon: postgresql, percentage: "45" }
             ]
         },
-        { category: "Tools",
+        {
+            category: "Tools",
             skills: [
                 { name: "Git", icon: git, percentage: "60" },
                 { name: "Github", icon: github, percentage: "75" },
                 { name: "VsCode", icon: vscode, percentage: "80" }
             ]
         },
-        { category: "Framework",
+        {
+            category: "Framework",
             skills: [
                 { name: "Next.js", icon: next, percentage: "40" },
                 { name: "Django", icon: django, percentage: "60" },
@@ -62,7 +67,7 @@ export const MyContextProvider = ({ children }) => {
             work: "offers an opportunity to learn, innovate, and work on technology that impacts people around the world. Google promotes a growth mindset, collaboration, continuous learning, diversity, and innovation. Employees can work with talented teams, solve real-world problems, develop new skills, and contribute to meaningful products and services. It provides an environment where individuals are encouraged to grow both professionally and personally.",
             logo: google
         },
-        
+
     ]
 
     const Projects = [
@@ -75,23 +80,55 @@ export const MyContextProvider = ({ children }) => {
                 {
                     title: "🔐 Secure User Authentication",
                     description: [
-                        "Users can register, log in, maintain authenticated sessions, and securely access only their own social media accounts, posts, and activity. Authentication is handled using secure HTTP-only cookies, helping protect authentication tokens from direct JavaScript access.",
-                        "The system also supports protected routes on both the frontend and backend, ensuring that unauthorized users cannot access private dashboard functionality or user-specific data."
+                        {
+                            desc: "Users can register, log in, maintain authenticated sessions, and securely access only their own social media accounts, posts, and activity. Authentication is handled using secure HTTP-only cookies, helping protect authentication tokens from direct JavaScript access.",
+                            points: []
+                        },
+                        {
+                            desc: "The system also supports protected routes on both the frontend and backend, ensuring that unauthorized users cannot access private dashboard functionality or user-specific data.",
+                            points: []
+                        }
                     ]
                 },
                 {
                     title: "📱 Social Media Account Integration",
                     description: [
-                        "Users can connect their social media accounts to the platform and manage them from a centralized dashboard.",
-                        "The platform is designed to work with multiple platforms, including: \n• Instagram\n• Instagram Business accounts \n• LinkedIn\n• LinkedIn Pages",
-                        "After connecting an account, the platform stores the required account information and connection status. Only connected and authorized accounts are used when publishing scheduled posts.",
-                        "The system is designed around the idea that a user can start with a normal social media account and connect or upgrade the account when required by the publishing platform's API requirements."
+                        {
+                            desc: "Users can connect their social media accounts to the platform and manage them from a centralized dashboard.",
+                            points: []
+                        },
+                        {
+                            desc: "The platform is designed to work with multiple platforms, including:",
+                            points: [
+                                "Instagram",
+                                "Instagram Business accounts",
+                                "LinkedIn"
+                            ]
+                        },
+                        {
+                            desc: "After connecting an account, the platform stores the required account information and connection status. Only connected and authorized accounts are used when publishing scheduled posts.",
+                            points: []
+                        },
+                        {
+                            desc: "The system is designed around the idea that a user can start with a normal social media account and connect or upgrade the account when required by the publishing platform's API requirements.",
+                            points: []
+                        }
                     ]
                 },
                 {
                     title: "✍️ Create and Schedule Posts",
                     description: [
-                        "Users can create social media posts by providing: \n• Post content or caption.\n• One or multiple media files.\n• Images.\n• Videos.\n• Selected social media platforms.\n• Scheduled publishing date and time."
+                        {
+                            desc: "Users can create social media posts by providing:",
+                            points: [
+                                "Post content or caption",
+                                "One or multiple media files",
+                                "Images",
+                                "Videos",
+                                "Selected social media platforms",
+                                "Scheduled publishing date and time"
+                            ]
+                        }
                     ]
                 }
             ],
@@ -116,143 +153,248 @@ export const MyContextProvider = ({ children }) => {
                 {
                     title: "🔐 Secure User Authentication",
                     description: [
-                        "Users can register, log in, maintain authenticated sessions, and securely access only their own projects. Authentication ensures that each user's generated websites, files, and project data remain isolated from other users.",
-
-                        "The system supports protected routes and session checking, preventing unauthorized users from accessing the AI builder dashboard or project management features."
+                        {
+                            desc: "Users can register, log in, maintain authenticated sessions, and securely access only their own projects. Authentication ensures that each user's generated websites, files, and project data remain isolated from other users.",
+                            points: []
+                        },
+                        {
+                            desc: "The system supports protected routes and session checking, preventing unauthorized users from accessing the AI builder dashboard or project management features.",
+                            points: []
+                        }
                     ]
                 },
 
                 {
                     title: "🤖 AI-Powered Website Generation",
                     description: [
-                        "Users can generate complete React websites by simply describing their requirements in natural language.",
-
-                        "For example, a user can enter a prompt such as: \"Create a modern and polished portfolio website for a web developer.\" The AI analyzes the request and transforms it into a structured, functional website project."
+                        {
+                            desc: "Users can generate complete React websites by simply describing their requirements in natural language.",
+                            points: []
+                        },
+                        {
+                            desc: "For example, a user can enter a prompt such as: \"Create a modern and polished portfolio website for a web developer.\" The AI analyzes the request and transforms it into a structured, functional website project.",
+                            points: []
+                        }
                     ]
                 },
                 {
                     title: "🧠 Intelligent Project Planning",
                     description: [
-                        "Before generating code, the AI first creates a structured project plan containing the required files, their paths, purposes, imports, and exports.",
-
-                        "Instead of generating the entire website as one large file, the system divides the project into organized components such as: \n• /App.js\n• /styles.css\n• Header\n• Hero\n• About\n• Skills\n• Projects\n• Contact\n• Footer",
-
-                        "This structured planning approach produces more maintainable and modular React applications."
+                        {
+                            desc: "Before generating code, the AI first creates a structured project plan containing the required files, their paths, purposes, imports, and exports.",
+                            points: []
+                        },
+                        {
+                            desc: "Instead of generating the entire website as one large file, the system divides the project into organized components such as:",
+                            points: [
+                                "/App.js",
+                                "/styles.css",
+                                "Header Component",
+                                "Hero Section",
+                                "About Section",
+                                "Skills Section",
+                                "Projects Section",
+                                "Contact Page",
+                                "Footer Component"
+                            ]
+                        },
+                        {
+                            desc: "This structured planning approach produces more maintainable and modular React applications.",
+                            points: []
+                        }
                     ]
                 },
                 {
                     title: "⚡ Parallel AI File Generation",
                     description: [
-                        "After creating the project plan, the system generates multiple files simultaneously instead of generating every component one by one.",
-
-                        "A controlled concurrency system manages how many AI generation requests can run at the same time, improving overall generation speed while avoiding unnecessary overload on the AI provider."
+                        {
+                            desc: "After creating the project plan, the system generates multiple files simultaneously instead of generating every component one by one.",
+                            points: []
+                        },
+                        {
+                            desc: "A controlled concurrency system manages how many AI generation requests can run at the same time, improving overall generation speed while avoiding unnecessary overload on the AI provider.",
+                            points: []
+                        }
                     ]
                 },
 
                 {
                     title: "🔄 Automatic Retry for Failed Files",
                     description: [
-                        "AI responses can occasionally fail or return invalid structured output. The system automatically detects failed file generations and retries only those specific files.",
-
-                        "Successfully generated files are preserved, so the entire project does not need to be regenerated when only one or two files fail."
+                        {
+                            desc: "AI responses can occasionally fail or return invalid structured output. The system automatically detects failed file generations and retries only those specific files.",
+                            points: []
+                        },
+                        {
+                            desc: "Successfully generated files are preserved, so the entire project does not need to be regenerated when only one or two files fail.",
+                            points: []
+                        }
                     ]
                 },
 
                 {
                     title: "🛠️ Code Validation and Auto-Fixing",
                     description: [
-                        "Generated AI code passes through a processing pipeline before being saved to the project.",
-
-                        "The system normalizes generated content, checks for empty or invalid output, validates generated code, and applies automatic corrections where possible.",
-
-                        "This additional validation layer helps improve the reliability of AI-generated React applications."
+                        {
+                            desc: "Generated AI code passes through a processing pipeline before being saved to the project.",
+                            points: []
+                        },
+                        {
+                            desc: "The system normalizes generated content, checks for empty or invalid output, validates generated code, and applies automatic corrections where possible.",
+                            points: []
+                        },
+                        {
+                            desc: "This additional validation layer helps improve the reliability of AI-generated React applications.",
+                            points: []
+                        }
                     ]
                 },
 
                 {
                     title: "📐 Structured AI Output with Schemas",
                     description: [
-                        "The AI is guided to return structured data instead of uncontrolled text responses.",
-
-                        "The system uses schemas for project planning, file generation, and project revisions, helping ensure that generated data follows an expected format.",
-
-                        "This makes it easier to identify file paths, extract code, validate responses, and safely process AI-generated operations."
+                        {
+                            desc: "The AI is guided to return structured data instead of uncontrolled text responses.",
+                            points: []
+                        },
+                        {
+                            desc: "The system uses schemas for project planning, file generation, and project revisions, helping ensure that generated data follows an expected format.",
+                            points: []
+                        },
+                        {
+                            desc: "This makes it easier to identify file paths, extract code, validate responses, and safely process AI-generated operations.",
+                            points: []
+                        }
                     ]
                 },
 
                 {
                     title: "💬 AI-Powered Website Revision",
                     description: [
-                        "After a website is generated, users can continue modifying it through natural language instructions.",
-
-                        "Users can request changes such as: \n• Make the hero section more modern.\n• Add a dark mode toggle.\n• Change the layout.\n• Add a new section.\n• Modify existing components.",
-
-                        "The AI analyzes the existing project and performs structured create, update, or delete operations instead of regenerating the entire website."
+                        {
+                            desc: "After a website is generated, users can continue modifying it through natural language instructions.",
+                            points: []
+                        },
+                        {
+                            desc: "Users can request changes such as:",
+                            points: [
+                                "Make the hero section more modern",
+                                "Add a dark mode toggle",
+                                "Change the layout",
+                                "Add a new section",
+                                "Modify existing components"
+                            ]
+                        },
+                        {
+                            desc: "The AI analyzes the existing project and performs structured create, update, or delete operations instead of regenerating the entire website.",
+                            points: []
+                        }
                     ]
                 },
 
                 {
                     title: "📁 Intelligent Project Context Management",
                     description: [
-                        "During AI revisions, the system provides the AI with information about the current project structure and relevant file contents.",
-
-                        "A project manifest containing details such as file paths, hashes, and sizes helps the system represent the current project without unnecessarily sending every file to the AI."
+                        {
+                            desc: "During AI revisions, the system provides the AI with information about the current project structure and relevant file contents.",
+                            points: []
+                        },
+                        {
+                            desc: "A project manifest containing details such as file paths, hashes, and sizes helps the system represent the current project without unnecessarily sending every file to the AI.",
+                            points: []
+                        }
                     ]
                 },
 
                 {
                     title: "💻 Interactive Code Editor",
                     description: [
-                        "Users can view and manually edit the AI-generated project files directly inside the platform.",
-
-                        "The integrated development environment provides features such as file navigation, syntax highlighting, line numbers, inline errors, and an organized coding workspace."
+                        {
+                            desc: "Users can view and manually edit the AI-generated project files directly inside the platform.",
+                            points: []
+                        },
+                        {
+                            desc: "The integrated development environment provides features such as file navigation, syntax highlighting, line numbers, inline errors, and an organized coding workspace.",
+                            points: []
+                        }
                     ]
                 },
 
                 {
                     title: "🔴 Live Website Preview",
                     description: [
-                        "Generated React websites can run directly inside the application, allowing users to instantly see the result of the AI-generated code.",
-
-                        "Users can switch between editing the source code and viewing the live website preview without downloading the project or manually running it on their computer."
+                        {
+                            desc: "Generated React websites can run directly inside the application, allowing users to instantly see the result of the AI-generated code.",
+                            points: []
+                        },
+                        {
+                            desc: "Users can switch between editing the source code and viewing the live website preview without downloading the project or manually running it on their computer.",
+                            points: []
+                        }
                     ]
                 },
 
                 {
                     title: "💾 Automatic Code Saving",
                     description: [
-                        "When users modify code inside the editor, their changes are automatically synchronized with the backend and saved to the project.",
-
-                        "A debounce mechanism prevents unnecessary API requests for every keystroke, improving performance while still keeping project files updated."
+                        {
+                            desc: "When users modify code inside the editor, their changes are automatically synchronized with the backend and saved to the project.",
+                            points: []
+                        },
+                        {
+                            desc: "A debounce mechanism prevents unnecessary API requests for every keystroke, improving performance while still keeping project files updated.",
+                            points: []
+                        }
                     ]
                 },
 
                 {
                     title: "📦 Automatic Dependency Detection",
                     description: [
-                        "The system analyzes imports used inside generated project files and detects required external dependencies.",
-
-                        "Detected dependencies can then be provided to the live preview environment, helping AI-generated React projects run correctly without manually configuring every package."
+                        {
+                            desc: "The system analyzes imports used inside generated project files and detects required external dependencies.",
+                            points: []
+                        },
+                        {
+                            desc: "Detected dependencies can then be provided to the live preview environment, helping AI-generated React projects run correctly without manually configuring every package.",
+                            points: []
+                        }
                     ]
                 },
-
                 {
                     title: "⏳ Background AI Generation with Progress Tracking",
                     description: [
-                        "Website generation runs as a background process so the application does not need to wait for every AI request before responding to the user.",
-
-                        "The system tracks project states such as: \n• Pending\n• Generating\n• Revising\n• Completed or Failed",
-
-                        "File-level progress can also be tracked, allowing the frontend to monitor the generation process while the AI creates the project."
+                        {
+                            desc: "Website generation runs as a background process so the application does not need to wait for every AI request before responding to the user.",
+                            points: []
+                        },
+                        {
+                            desc: "The system tracks project states such as:",
+                            points: [
+                                "Pending",
+                                "Revising",
+                                "Generating",
+                                "Completed or Failed"
+                            ]
+                        },
+                        {
+                            desc: "File-level progress can also be tracked, allowing the frontend to monitor the generation process while the AI creates the project.",
+                            points: []
+                        }
                     ]
                 },
 
                 {
                     title: "📂 Project Management and Versioning",
                     description: [
-                        "Users can create, access, manage, update, and delete multiple AI-generated website projects from a centralized dashboard.",
-
-                        "Each project stores information such as the original prompt, generated files, project description, status, and version-related data."
+                        {
+                            desc: "Users can create, access, manage, update, and delete multiple AI-generated website projects from a centralized dashboard.",
+                            points: []
+                        },
+                        {
+                            desc: "Each project stores information such as the original prompt, generated files, project description, status, and version-related data.",
+                            points: []
+                        }
                     ]
                 }
             ],
@@ -330,14 +472,14 @@ export const MyContextProvider = ({ children }) => {
     }
 
     return (
-        <MyContext.Provider value={{Skills,Experience,Projects,Education,Achievements,Profile}}>
+        <MyContext.Provider value={{ Skills, Experience, Projects, Education, Achievements, Profile }}>
             {children}
         </MyContext.Provider>
     )
 }
 
 export const UseMyContext = () => {
-    if(!MyContext) return;
+    if (!MyContext) return;
     const context = useContext(MyContext);
     return context;
 }

@@ -6,7 +6,6 @@ import { CodeXml, ExternalLink } from 'lucide-react';
 
 const Projects = () => {
   const { Projects } = UseMyContext();
-  console.log(Projects)
   return (
     <div className='w-full h-full flex items-center justify-center flex-col mt-7'>
       <GridCanvas />
@@ -43,7 +42,7 @@ const Projects = () => {
               <h1 className='w-full text-left text-sm mt-2'>
                 Description_
               </h1>
-              <p className='text-xs mt-2'>
+              <p className='text-xs mt-2 text-justify'>
                 {project.shortdesc}
               </p>
 
