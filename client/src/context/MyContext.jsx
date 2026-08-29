@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react"
 import { RiGithubLine, RiLinkedinBoxLine } from "@remixicon/react"
-import { aiwebsitebuilder, css, django, express, flask, git, github, google, html, js, microsoft, mongodb, next, node, openrouter, postgresql, react, socialmediaautomation, tailwind, vscode, zernio } from "../assets/assets.js"
+import { aiwebsitebuilder, css, django, express, flask, git, github, google, html, js, ljlogo, microsoft, mongodb, next, node, openrouter, postgresql, react, socialmediaautomation, tailwind, vscode, zernio } from "../assets/assets.js"
 
 const MyContext = createContext();
 export const MyContextProvider = ({ children }) => {
@@ -270,25 +270,34 @@ export const MyContextProvider = ({ children }) => {
 
     const Education = [
         {
-            schoolOrCollege: "Nilkanth Vidhyalay",
-            address: "Limbdi, Surendranagar(Gujarat)",
-            std: "10th",
-            grade: "88.66%",
-            description: ""
+            schoolOrCollege: "LJ University",
+            address: "Ahmedabad, Gujarat",
+            std: "present",
+            grade: "6.5 CGPA",
+            description: "i'm currently persuing Information & Technology @LJUniversity. and i just cleared 2nd year from this college.",
+            logo: ljlogo,
+            year: "2026",
+            active: true
         },
         {
             schoolOrCollege: "Nilkanth Vidhyalay",
             address: "Limbdi, Surendranagar(Gujarat)",
             std: "12th",
             grade: "81.24%",
-            description: ""
+            description: "i was cleared 12th std in gujarati medium from @Nilkanth Vidhyalay, at Limbdi, Surendranagar, Gujarat.",
+            logo: "",
+            year: "2024",
+            active: false
         },
         {
-            schoolOrCollege: "LJ University",
-            address: "Ahmedabad, Gujarat",
-            std: "present",
-            grade: "6.5 CGPA",
-            description: ""
+            schoolOrCollege: "Nilkanth Vidhyalay",
+            address: "Limbdi, Surendranagar(Gujarat)",
+            std: "10th",
+            grade: "88.66%",
+            description: "i was cleared 10th std in gujarati medium from @Nilkanth Vidhyalay, at Limbdi, Surendranagar, Gujarat.",
+            logo: "",
+            year: "2022",
+            active: false
         }
     ]
 

@@ -4,9 +4,10 @@ import { UseMyContext } from '../context/MyContext'
 import Experience from '../sections/Experience';
 import Skills from '../sections/Skills';
 import Menu from '../components/ui/Menu';
+import Education from '../sections/Education';
 
 const About = () => {
-  const { Profile, Education, Achievements } = UseMyContext();
+  const { Profile } = UseMyContext();
   return (
     <div className='w-full min-h-screen flex items-center justify-center flex-col'>
       {/* Menu */}
@@ -18,6 +19,7 @@ const About = () => {
       </div>
       <Skills />
       <Experience />
+      <Education />
     </div>
   )
 }

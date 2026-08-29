@@ -7,7 +7,7 @@ const Experience = () => {
     <div className='px-5 h-auto flex flex-col items-start justify-start w-[90%] gap-2'>
       <h1 className='w-full text-start text-3xl mt-6 -ml-4'>Experience<span className='animate-pulse'>_</span></h1>
       <div className='w-auto sm:w-full h-fit flex items-center justify-center relative'>
-        <div className='Vertical-Stick h-full w-[2px] bg-black flex flex-col items-center justify-center relative z-40 gap-80 sm:gap-70 my-6'>
+        <div className='Vertical-Stick h-full w-[2px] bg-black flex flex-col items-center justify-center relative z-40 gap-80 sm:gap-75 my-6'>
           {
             Experience.map((exp, idx) => (
               <div key={idx} className={`w-[20px] h-[20px] rounded-full relative bg-black`}>

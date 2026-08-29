@@ -19,7 +19,8 @@ import aiwebsitebuilder from "./aiwebsitebuilder.webp"
 import openrouter from "./openrouter.webp"
 import google from "./google.webp"
 import microsoft from "./microsoft.webp"
+import ljlogo from "./ljlogo.webp"
 
 export {
-    css, express, git, github, html, js, mongodb, node, postgresql, react, tailwind, vscode, flask, next, django, zernio, socialmediaautomation, aiwebsitebuilder, openrouter, google, microsoft
+    css, express, git, github, html, js, mongodb, node, postgresql, react, tailwind, vscode, flask, next, django, zernio, socialmediaautomation, aiwebsitebuilder, openrouter, google, microsoft, ljlogo
 }
