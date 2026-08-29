@@ -1,0 +1,650 @@
+import { CircleArrowRight, XIcon } from "lucide-react";
+import { RiGithubLine, RiLinkedinBoxLine } from "@remixicon/react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+
+const Navbar = () => {
+    const [menuHover, setMenuHover] = useState(false);
+    const [hoverLink, setHoverLink] = useState(null);
+    const [socialHoverLink, setSocialHoverLink] = useState(null);
+
+    const [menuOpen, setMenuOpen] = useState(false);
+
+    const navLinks = [
+        { name: "Home", to: "/" },
+        { name: "About", to: "/about" },
+        { name: "Projects", to: "/projects" }
+    ];
+
+    const socialLinks = [
+        {
+            name: "Linkedin",
+            to: "#",
+            icon: (
+                <RiLinkedinBoxLine size={45} color="rgba(255,255,255,1)" />
+            )
+        },
+        {
+            name: "Github",
+            to: "#",
+            icon: (
+                <RiGithubLine size={45} strokeWidth="2px" color="rgba(255,255,255,1)" />
+            )
+        }
+    ];
+
+    const badges = [
+        "Full Stack Developer",
+        "React Developer",
+        "MERN Stack",
+        "Creative Developer"
+    ];
+
+    // Only duplicate ONCE for seamless -50% animation
+    const carouselBadges = [...badges, ...badges];
+
+    return (
+        <>
+            {/* ================= NAVBAR ================= */}
+
+            <nav
+                className={`
+                    flex items-center justify-between
+                    p-[9px_7%]
+                    sm:p-[9px_15%]
+                    lg:p-[9px_18%]
+                    xl:p-[9px_20%]
+                    fixed top-0 left-0
+                    w-full
+                    z-[3000]
+                    transition-colors
+                    duration-300
+                    ${menuOpen
+                        ? "bg-[#101010]"
+                        : "bg-[#dadada]"
+                    }
+                `}
+            >
+                {/* Logo */}
+
+                <Link
+                    to="/"
+                    onClick={() => setMenuOpen(false)}
+                    className={`
+                        flex items-center
+                        text-2xl
+                        cursor-pointer
+                        font-semibold
+                        transition-colors
+                        duration-300
+                        ${menuOpen ? "text-white" : "text-black"}
+                    `}
+                >
+                    Kishan
+                </Link>
+
+                {/* Menu / Close Button */}
+
+                <div className="flex flex-col w-auto h-7 overflow-hidden">
+                    <div
+                        
+                        className={`
+                            transition-all
+                            duration-300
+                            ${menuOpen ? "-translate-y-6 text-white" : ""}
+                        `}
+                    >
+                        {/* MENU */}
+
+                        <button
+                            type="button"
+                            onClick={() => setMenuOpen(true)}
+                            onMouseEnter={() => setMenuHover(true)}
+                            onMouseLeave={() => setMenuHover(false)}
+                            className="
+                                flex
+                                items-center
+                                font-semibold
+                                justify-center
+                                gap-2
+                                cursor-pointer
+                            "
+                        >
+                            Menu
+
+                            <div className="
+                                flex
+                                flex-col
+                                py-1
+                                justify-center
+                                items-center
+                                gap-1
+                                overflow-hidden
+                            ">
+                                <span className="h-[2px] w-5 bg-black" />
+
+                                <span
+                                    className={`
+                                        h-[2px]
+                                        w-5
+                                        bg-black
+                                        transition-all
+                                        duration-300
+                                        ${menuHover
+                                            ? ""
+                                            : "translate-x-2"
+                                        }
+                                    `}
+                                />
+                            </div>
+                        </button>
+
+                        {/* CLOSE */}
+
+                        <button
+                            type="button"
+                            onClick={() => setMenuOpen(false)}
+                            className="
+                                flex
+                                items-center
+                                justify-center
+                                gap-2
+                                cursor-pointer
+                            "
+                        >
+                            Close
+
+                            <XIcon size={20} />
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+
+            {/* ================= FULL SCREEN MENU ================= */}
+
+            <motion.div
+                initial={false}
+                animate={{
+                    x: menuOpen ? "0%" : "-100%"
+                }}
+                transition={{
+                    duration: 0.5,
+                    ease: [0.76, 0, 0.24, 1]
+                }}
+                onClick={()=>setMenuOpen(false)}
+                className="
+                    fixed
+                    top-0
+                    left-0
+                    z-[2999]
+
+                    flex
+                    flex-col
+                    sm:flex-row
+
+                    items-start
+                    justify-between
+
+                    w-full
+                    min-h-screen
+
+                    bg-[#101010]
+
+                    overflow-hidden
+                "
+            >
+                {/* ================= LEFT SIDE ================= */}
+
+                <div
+                    className="
+                        relative
+                        z-10
+
+                        flex
+                        flex-col
+                        items-start
+                        justify-between
+
+                        min-h-screen
+
+                        w-full
+                        sm:w-[55%]
+                        pb-10
+                    "
+                >
+                    {/* NAV LINKS */}
+
+                    <ul
+                        className="
+                            relative
+                            flex
+                            flex-col
+                            gap-5
+
+                            mt-24
+                            px-5
+                            sm:px-10
+                            lg:px-16
+                        "
+                    >
+                        {navLinks.map((link, idx) => (
+                            <div
+                                key={link.name}
+                                className="
+                                    flex
+                                    items-center
+                                    justify-start
+                                    gap-2
+                                    w-full
+                                "
+                            >
+                                {/* Number */}
+
+                                <motion.span
+                                    initial={{
+                                        opacity: 0,
+                                        x: -30
+                                    }}
+                                    animate={
+                                        menuOpen
+                                            ? {
+                                                opacity: 1,
+                                                x: 0
+                                            }
+                                            : {
+                                                opacity: 0,
+                                                x: -30
+                                            }
+                                    }
+                                    transition={{
+                                        duration: 0.4,
+                                        delay: menuOpen
+                                            ? idx * 0.12
+                                            : 0
+                                    }}
+                                    className="
+                                        text-white/50
+                                        text-sm
+                                        self-start
+                                        mt-3
+                                    "
+                                >
+                                    [0{idx + 1}]
+                                </motion.span>
+
+
+                                {/* Link */}
+
+                                <motion.div
+                                    initial={{
+                                        opacity: 0,
+                                        x: -100
+                                    }}
+                                    animate={
+                                        menuOpen
+                                            ? {
+                                                opacity: 1,
+                                                x: 0
+                                            }
+                                            : {
+                                                opacity: 0,
+                                                x: -100
+                                            }
+                                    }
+                                    transition={{
+                                        duration: 0.5,
+                                        delay: menuOpen
+                                            ? idx * 0.15 + 0.1
+                                            : 0
+                                    }}
+                                    onMouseEnter={() =>
+                                        setHoverLink(idx)
+                                    }
+                                    onMouseLeave={() =>
+                                        setHoverLink(null)
+                                    }
+                                    className="
+                                        w-auto
+                                        h-18
+                                        sm:h-30
+                                        overflow-hidden
+                                    "
+                                >
+                                    <div
+                                        className={`
+                                            flex
+                                            flex-col
+                                            gap-2
+
+                                            transition-all
+                                            duration-300
+                                            ease-out
+
+                                            ${hoverLink === idx
+                                                ? "-translate-y-18 sm:-translate-y-28"
+                                                : ""
+                                            }
+                                        `}
+                                    >
+                                        {/* Outline */}
+
+                                        <Link
+                                            to={link.to}
+                                            onClick={() =>
+                                                setMenuOpen(false)
+                                            }
+                                            className="
+                                                white-stroke
+                                                text-transparent
+
+                                                text-6xl
+                                                sm:text-8xl
+
+                                                font-semibold
+                                                leading-none
+                                            "
+                                        >
+                                            {link.name}
+                                        </Link>
+
+                                        {/* Filled */}
+
+                                        <Link
+                                            to={link.to}
+                                            onClick={() =>
+                                                setMenuOpen(false)
+                                            }
+                                            className="
+                                                text-6xl
+                                                sm:text-8xl
+
+                                                text-white
+                                                font-semibold
+                                                leading-none
+                                            "
+                                        >
+                                            {link.name}
+                                        </Link>
+                                    </div>
+                                </motion.div>
+
+
+                                {/* Arrow */}
+
+                                <CircleArrowRight
+                                    size={45}
+                                    className={`
+                                        text-white
+                                        shrink-0
+                                        -rotate-[45deg]
+
+                                        transition-all
+                                        duration-300
+
+                                        ${hoverLink === idx
+                                            ? "opacity-100 translate-x-0"
+                                            : "opacity-0 -translate-x-3"
+                                        }
+                                    `}
+                                />
+                            </div>
+                        ))}
+                    </ul>
+
+
+                    {/* ================= SOCIAL LINKS ================= */}
+                    <motion.div
+                        initial={{
+                            opacity: 0,
+                            y: 30
+                        }}
+                        animate={
+                            menuOpen
+                                ? {
+                                    opacity: 1,
+                                    y: 0
+                                }
+                                : {
+                                    opacity: 0,
+                                    y: 30
+                                }
+                        }
+                        transition={{
+                            duration: 0.5,
+                            delay: menuOpen ? 0.5 : 0
+                        }}
+                        className="
+                            mt-20
+                            pl-9
+                            sm:pl-16
+                            mb-[10%]
+                            flex
+                            flex-col
+                            items-start
+                            justify-start
+                            gap-2
+                        "
+                    >
+                        <h1 className="text-white">Social Links<span className="animate-pulse">_</span></h1>
+                        <div className="flex gap-4">
+                            {socialLinks.map((link, idx) => (
+                                <Link
+                                    to={link.to}
+                                    key={link.name}
+                                    className="
+                                    relative
+                                    flex
+                                    items-center
+                                    justify-center
+                                "
+                                    onMouseEnter={() =>
+                                        setSocialHoverLink(idx)
+                                    }
+                                    onMouseLeave={() =>
+                                        setSocialHoverLink(null)
+                                    }
+                                >
+                                    {/* Icon */}
+
+                                    <div
+                                        className="
+                                        cursor-pointer
+                                        transition-transform
+                                        duration-300
+                                        hover:scale-110
+                                    "
+                                    >
+                                        {link.icon}
+                                    </div>
+
+
+                                    {/* Tooltip */}
+
+                                    <div
+                                        className={`
+                                        absolute
+
+                                        flex
+                                        items-center
+                                        justify-center
+                                        gap-2
+
+                                        left-1/2
+                                        -translate-x-1/2
+
+                                        whitespace-nowrap
+
+                                        text-sm
+                                        font-semibold
+                                        text-white
+
+                                        bg-[#3a3a3a]
+
+                                        px-[10px]
+                                        py-[8px]
+
+                                        rounded-lg
+
+                                        pointer-events-none
+
+                                        transition-all
+                                        duration-300
+
+                                        ${socialHoverLink === idx
+                                                ? "-top-12 opacity-100 translate-y-0"
+                                                : "-top-8 opacity-0 translate-y-2"
+                                            }
+                                    `}
+                                    >
+                                        {link.name}
+
+                                        <CircleArrowRight
+                                            color="#ffffff"
+                                            size={17}
+                                            className="-rotate-[45deg]"
+                                        />
+
+                                        {/* Triangle */}
+
+                                        <div
+                                            className="
+                                            w-0
+                                            h-0
+
+                                            absolute
+                                            left-1/2
+                                            -translate-x-1/2
+                                            -bottom-2
+
+                                            border-l-[6px]
+                                            border-r-[6px]
+                                            border-t-[8px]
+
+                                            border-l-transparent
+                                            border-r-transparent
+                                            border-t-[#3a3a3a]
+                                        "
+                                        />
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </motion.div>
+                </div>
+
+
+                {/* ================= RIGHT SIDE DESKTOP ================= */}
+
+                <div
+                    className="
+                        relative
+                        hidden
+                        lg:flex
+                        flex-col
+                        justify-center
+                        w-[45%]
+                        min-h-screen
+                        overflow-hidden
+                    "
+                >
+                    {/* TOP MARQUEE */}
+
+                    <div
+                        className="
+                            w-full
+                            overflow-hidden
+
+                            -rotate-[12deg]
+                        "
+                    >
+                        <div
+                            className="
+                                upper-badge
+                                flex
+                                w-max
+                                animate-carousel
+                            "
+                        >
+                            {carouselBadges.map((badge, idx) => (
+                                <h1
+                                    key={`top-${idx}`}
+                                    className={`
+                                        shrink-0
+
+                                        text-5xl
+                                        lg:text-7xl
+                                        xl:text-8xl
+
+                                        font-semibold
+                                        leading-none
+
+                                        px-4
+
+                                        ${idx % 2 === 0
+                                            ? "white-stroke text-transparent"
+                                            : "text-white"
+                                        }
+                                    `}
+                                >
+                                    {badge}
+                                </h1>
+                            ))}
+                        </div>
+                    </div>
+
+
+                    {/* BOTTOM MARQUEE */}
+
+                    <div
+                        className="
+                            absolute
+
+                            w-full
+                            overflow-hidden
+
+                            rotate-[12deg]
+                        "
+                    >
+                        <div
+                            className="
+                                lower-badge
+                                flex
+                                w-max
+                                animate-carousel-reverse
+                            "
+                        >
+                            {carouselBadges.map((badge, idx) => (
+                                <h1
+                                    key={`bottom-${idx}`}
+                                    className={`
+                                        shrink-0
+
+                                        text-5xl
+                                        lg:text-7xl
+                                        xl:text-8xl
+
+                                        font-semibold
+                                        leading-none
+
+                                        px-4
+
+                                        ${idx % 2 === 0
+                                            ? "text-white"
+                                            : "white-stroke text-transparent"
+                                        }
+                                    `}
+                                >
+                                    {badge}
+                                </h1>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+        </>
+    );
+};
+
+export default Navbar;

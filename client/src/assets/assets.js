@@ -1,0 +1,25 @@
+import css from "./css.webp"
+import express from "./express.webp"
+import git from "./git.webp"
+import github from "./github.webp"
+import html from "./html.webp"
+import js from "./js.webp"
+import mongodb from "./mongodb.webp"
+import node from "./node.webp"
+import postgresql from "./postgresql.webp"
+import react from "./react.webp"
+import tailwind from "./tailwind.webp"
+import vscode from "./vscode.webp"
+import flask from "./flask.webp"
+import next from "./next.webp"
+import django from "./django.webp"
+import zernio from "./zernio.webp"
+import socialmediaautomation from "./SocialMediaAutomation.webp"
+import aiwebsitebuilder from "./aiwebsitebuilder.webp"
+import openrouter from "./openrouter.webp"
+import google from "./google.webp"
+import microsoft from "./microsoft.webp"
+
+export {
+    css, express, git, github, html, js, mongodb, node, postgresql, react, tailwind, vscode, flask, next, django, zernio, socialmediaautomation, aiwebsitebuilder, openrouter, google, microsoft
+}

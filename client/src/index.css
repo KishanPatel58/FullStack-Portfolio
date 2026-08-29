@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+* {
+    text-decoration: none;
+    list-style: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}
+
+html,
+body {
+    background-color: #dadada;
+    overflow-x: hidden;
+}
+
+.white-stroke {
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke: 1px #ffffff;
+
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+@media (max-width: 640px) {
+    .white-stroke {
+        -webkit-text-stroke-width: 0.75px;
+    }
+}
+
+/* ================= CAROUSEL ================= */
+
+@theme {
+    --animate-carousel: carousel 25s linear infinite;
+    --animate-carousel-reverse: carousel-reverse 25s linear infinite;
+
+    @keyframes carousel {
+        from {
+            transform: translateX(0);
+        }
+
+        to {
+            transform: translateX(-50%);
+        }
+    }
+
+    @keyframes carousel-reverse {
+        from {
+            transform: translateX(-50%);
+        }
+
+        to {
+            transform: translateX(0);
+        }
+    }
+}
+
+.animate-carousel:hover,
+.animate-carousel-reverse:hover {
+    animation-play-state: paused;
+}
+
+
+@keyframes shine {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.button-bg {
+    background: conic-gradient(from 0deg, #00F5FF, #FF00C7, #FFD700, #00FF85, #8A2BE2, #00F5FF);
+    background-size: 300% 300%;
+    animation: shine 4s ease-out infinite;
+}
+
+/* Triangle */
+.arrow-left {
+    width: 0;
+    height: 0;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-right: 10px solid black;
+}
+
+.arrow-right {
+  width: 0; 
+  height: 0; 
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-left: 10px solid black;
+}
