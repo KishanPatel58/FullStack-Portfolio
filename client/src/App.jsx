@@ -9,6 +9,7 @@ import Navbar from "./components/Navbar";
 import NotFound from "./pages/404/NotFound";
 import About from "./pages/About";
 import Projects from "./pages/Projects";
+import SelectedProject from "./pages/SelectedProject";
 
 const SHOW_LANDING_ANIMATION =
   import.meta.env.VITE_SHOW_LANDING === "true";
@@ -31,6 +32,7 @@ const App = () => {
           />} />
           <Route path="/about" element={<About/>} />
           <Route path="/projects" element={<Projects/>} />
+          <Route path="/projects/:id" element={<SelectedProject/>} />
         </Route>
         {/* Page not Found */}
         <Route path="*" element={<NotFound />}/>

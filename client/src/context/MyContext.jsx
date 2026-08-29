@@ -67,6 +67,7 @@ export const MyContextProvider = ({ children }) => {
 
     const Projects = [
         {
+            _id: "2kj3h423kj4h23kj4h23kj4h",
             name: "Social-Media Automation",
             shortdesc: "This is the platform in which you can connect your social media platform like linkedin and instagram and you can post anything on your connected social media platforms.",
             desc: "Social Media Automation is a full-stack web application designed to simplify and automate the process of creating, scheduling, managing, and publishing content across multiple social media platforms from one centralized dashboard. The main goal of the project is to help users manage their social media presence efficiently without manually creating and publishing the same content separately on every platform.The platform provides a modern and user-friendly interface where users can create posts, attach single or multiple media files, choose the target social media platforms, and schedule the content for a specific date and time. Once the scheduled time is reached, the system automatically processes and publishes the post through connected social media accounts.",
@@ -107,6 +108,7 @@ export const MyContextProvider = ({ children }) => {
             publicLink: "#"
         },
         {
+            _id: "3kj4h356ghg465jhg4jhg42jgf",
             name: "AI Website Builder",
             shortdesc: "This is the platform in which user can generate landing page according their choice.",
             desc: "AI Website Builder is a full-stack, AI-powered web application that allows users to generate complete React websites simply by describing what they want in natural language.Instead of manually creating every component, CSS file, and page structure, the user can enter a prompt such as:\n “Create a modern and polished portfolio website for a web developer.”\n The system then uses AI to analyze the request, plan the website structure, generate multiple source files, validate the generated code, store the project in the database, and display the working result inside an interactive code editor and live preview.The project is designed to demonstrate a more advanced use of AI than simple text generation. The AI does not generate one large HTML file; instead, it follows a multi-stage software generation workflow.",

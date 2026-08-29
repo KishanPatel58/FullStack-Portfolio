@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import GridCanvas from "../components/ui/GridCanvas";
 import { UseMyContext } from "../context/MyContext";
 import Menu from "../components/ui/Menu";
-import Hero from "../components/Hero";
+import Hero from "../sections/Hero";
 
 const Home = ({ onLoaded }) => {
   const {Profile} = UseMyContext();

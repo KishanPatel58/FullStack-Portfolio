@@ -1,6 +1,6 @@
 import { FileCog, FolderBookmark, SendHorizontal } from "lucide-react";
 import { UseMyContext } from "../context/MyContext";
-import Button from "./ui/Button";
+import Button from "../components/ui/Button";
 
 const Hero = () => {
     const { Profile } = UseMyContext();
