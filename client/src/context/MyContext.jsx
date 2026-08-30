@@ -459,7 +459,7 @@ export const MyContextProvider = ({ children }) => {
             name: "Kishan Patel",
             email: "patelkishan3101@gmail.com",
             description: "Tech Enthuciest at L.J.University. i just complete 2nd year at this college and i want to deep die into tech world. i want to get knowledge about sarrounding technologies.",
-            address: "Surendranagar, Gujarat",
+            address: "Ahmedabad, Gujarat",
             mobileNo: "+91 8306333444",
             socialProfiles: [
                 { name: "Linkedin", to: "#", icon: <RiLinkedinBoxLine size={45} color="rgba(255,255,255,1)" /> },

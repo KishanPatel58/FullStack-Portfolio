@@ -2,11 +2,13 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Home, FolderKanban, ArrowRight, Sparkles, ArrowRightIcon, HomeIcon } from "lucide-react";
 import { Link } from "react-router-dom";
+import Menu from "../../components/ui/Menu";
 
 const NotFound = () => {
     return (
         <div className="relative min-h-screen w-full overflow-hidden bg-[#f4f4f2] text-[#20232a]">
-
+            {/* Menu */}
+            <Menu />
             {/* Background subtle glow */}
             <div className="absolute left-1/2 top-[48%] h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-300/20 blur-[120px]" />
 
