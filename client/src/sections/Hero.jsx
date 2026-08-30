@@ -6,8 +6,18 @@ import Button from "../components/ui/Button";
 const Hero = () => {
     const { Profile } = UseMyContext();
 
+    const badges = [
+        "Full Stack Developer",
+        "React Developer",
+        "MERN Stack",
+        "Creative Developer"
+    ];
+
+    // Duplicate for seamless loop
+    const carouselBadges = [...badges, ...badges];
+
     return (
-        <section className="relative h-auto flex items-center flex-col gap-4 sm:gap-7">
+        <section className="relative h-auto flex items-center flex-col gap-4 sm:gap-7 overflow-hidden">
             <div className="flex flex-col justify-center items-center sm:gap-3">
                 
                 {/* Hi Greeting */}
@@ -67,6 +77,39 @@ const Hero = () => {
                         <SendHorizontal className="text-black group-hover:text-white group-hover:-translate-y-1 group-hover:translate-x-1 transition-all duration-300 -rotate-40" />
                     }
                 />
+            </motion.div>
+
+            {/* Horizontal Marquee */}
+            <motion.div
+                className="w-full overflow-hidden mt-6 mb-4"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.55 }}
+            >
+                <div className="flex w-max h-auto py-6 animate-carousel">
+                    {carouselBadges.map((badge, idx) => (
+                        <h1
+                            key={`hero-badge-${idx}`}
+                            className={`
+                                shrink-0
+                                text-5xl
+                                sm:text-6xl
+                                md:text-7xl
+                                lg:text-8xl
+                                font-semibold
+                                leading-none
+                                px-4
+                                ${idx % 2 === 0
+                                    ? "black-stroke text-transparent"
+                                    : "text-black"
+                                }
+                            `}
+                        >
+                            {badge}
+                        </h1>
+                    ))}
+                </div>
             </motion.div>
         </section>
     )

@@ -13,25 +13,49 @@ const About = () => {
     <div className='w-full h-full flex items-center justify-center flex-col'>
       <GridCanvas />
 
-      {/* Profile Section */}
-      <div className='w-full flex flex-col items-center justify-center gap-3 mt-20 sm:flex-row sm:justify-start sm:items-start sm:px-6 lg:px-15'>
+      {/* Profile Section - Vertical & Centered */}
+      <div className='w-full flex flex-col items-center justify-center gap-6 mt-20 px-4'>
         
         {/* Profile Image */}
         <motion.img
           src={Profile.me.myImg}
           alt="My Image"
-          className='w-[90%] h-[40vh] sm:w-[200vh] sm:h-[40vh] sm:cover md:w-[60vh] relative z-[20] rounded-2xl'
-          initial={{ opacity: 0, x: -50, scale: 0.96 }}
-          whileInView={{ opacity: 1, x: 0, scale: 1 }}
+          className='
+            w-[90%]
+            sm:w-[50%]
+            md:w-[40%]
+            lg:w-[30%]
+            xl:w-[25%]
+            max-w-[380px]
+            h-auto
+            aspect-[3/4]
+            object-cover
+            relative z-[20]
+            rounded-2xl
+          '
+          initial={{ opacity: 0, y: 30, scale: 0.96 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         />
 
         {/* About Text */}
         <motion.p
-          className='text-justify px-4 sm:text-xl'
-          initial={{ opacity: 0, x: 40 }}
-          whileInView={{ opacity: 1, x: 0 }}
+          className='
+            text-justify
+            text-base
+            sm:text-lg
+            md:text-xl
+            leading-relaxed
+            w-[90%]
+            sm:w-[80%]
+            md:w-[70%]
+            lg:w-[60%]
+            xl:w-[50%]
+            max-w-[700px]
+          '
+          initial={{ opacity: 0, y: 25 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
         >
@@ -39,7 +63,7 @@ const About = () => {
         </motion.p>
       </div>
 
-      {/* Other Sections (already have their own animations) */}
+      {/* Other Sections */}
       <Skills />
       <Experience />
       <Education />
