@@ -11,7 +11,7 @@ const Button = (props) => {
     }
     else if (props.type === "border") {
         return (
-            <button className={`text-black text-xl w-[35vh] rounded-lg py-2 flex items-center group justify-center gap-4 border-2 border-black hover:bg-black hover:text-white transition-all duration-300 cursor-pointer ${props.className}`}>{props.text} {props.icon}</button>
+            <Link to={props.link} className={`text-black text-xl w-[35vh] rounded-lg py-2 flex items-center group justify-center gap-4 border-2 border-black hover:bg-black hover:text-white transition-all duration-300 cursor-pointer ${props.className}`}>{props.text} {props.icon}</Link>
         )
     }
     else {

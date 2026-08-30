@@ -12,6 +12,7 @@ import Projects from "./pages/Projects";
 import SelectedProject from "./pages/SelectedProject";
 import Contact from "./pages/Contact";
 import { Toaster } from "react-hot-toast"
+import Resume from "./pages/Resume";
 
 const SHOW_LANDING_ANIMATION =
   import.meta.env.VITE_SHOW_LANDING === "true";
@@ -23,7 +24,7 @@ const App = () => {
   const [homeLoaded, setHomeLoaded] = useState(false);
   return (
     <>
-      <Toaster position="top-center"/>
+      <Toaster position="top-center" />
       <Routes>
         {/* Layout */}
         <Route
@@ -37,6 +38,8 @@ const App = () => {
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:id" element={<SelectedProject />} />
           <Route path="/contact" element={<Contact />} />
+          {/* Resume Route */}
+          <Route path="/resume" element={<Resume />} />
         </Route>
         {/* Page not Found */}
         <Route path="*" element={<NotFound />} />

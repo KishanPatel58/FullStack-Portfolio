@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react"
 import { RiGithubLine, RiLinkedinBoxLine } from "@remixicon/react"
-import { aiwebsitebuilder, css, django, express, flask, git, github, google, html, js, ljlogo, microsoft, mongodb, next, node, openrouter, postgresql, react, socialmediaautomation, tailwind, vscode, zernio } from "../assets/assets.js"
+import { aiwebsitebuilder, css, django, express, flask, git, github, google, html, js, ljlogo, microsoft, mongodb, myresume, myresumepdf, next, node, openrouter, postgresql, react, socialmediaautomation, tailwind, vscode, zernio } from "../assets/assets.js"
 
 const MyContext = createContext();
 export const MyContextProvider = ({ children }) => {
@@ -467,7 +467,9 @@ export const MyContextProvider = ({ children }) => {
             ],
             hobbies: ["Traveling", "Drawing", "Coding"],
             about: "I am Kishan, a student who is curious, creative, and always interested in learning new things. I enjoy exploring technology and understanding how things actually work instead of simply using them without knowing what happens behind the scenes. One of my biggest interests is programming and web development.",
-            myImg: "/me.png"
+            myImg: "/me.png",
+            myResume: myresume,
+            myResumePdf: myresumepdf
         }
     }
 

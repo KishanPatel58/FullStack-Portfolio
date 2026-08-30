@@ -60,6 +60,7 @@ const Hero = () => {
                     className="w-[35vh]"
                 />
                 <Button
+                    link="/contact"
                     text="Contact"
                     type="border"
                     icon={
