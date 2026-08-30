@@ -109,12 +109,12 @@ const Navbar = () => {
                 </div>
             </nav>
 
-            {/* ================= FULL SCREEN MENU ================= */}
+            {/* ================= FULL SCREEN MENU (Top → Bottom) ================= */}
             <motion.div
-                onClick={()=>setMenuOpen(false)}
+                onClick={() => setMenuOpen(false)}
                 initial={false}
-                animate={{ x: menuOpen ? "0%" : "-100%" }}
-                transition={{ duration: 0.5, ease: [0.76, 0, 0.24, 1] }}
+                animate={{ y: menuOpen ? "0%" : "-100%" }}
+                transition={{ duration: 0.55, ease: [0.76, 0, 0.24, 1] }}
                 className="
                     fixed top-0 left-0 z-[2999]
                     flex flex-col sm:flex-row
@@ -134,6 +134,7 @@ const Navbar = () => {
                         overflow-y-auto
                         overflow-x-hidden
                     "
+                    onClick={(e) => e.stopPropagation()}
                 >
                     {/* NAV LINKS */}
                     <ul className="relative flex flex-col gap-3 sm:gap-4 mt-24 px-5 sm:px-10 lg:px-16 flex-shrink-0">
@@ -144,32 +145,33 @@ const Navbar = () => {
                             >
                                 {/* Number */}
                                 <motion.span
-                                    initial={{ opacity: 0, x: -30 }}
+                                    initial={{ opacity: 0, y: -20 }}
                                     animate={
                                         menuOpen
-                                            ? { opacity: 1, x: 0 }
-                                            : { opacity: 0, x: -30 }
+                                            ? { opacity: 1, y: 0 }
+                                            : { opacity: 0, y: -20 }
                                     }
                                     transition={{
                                         duration: 0.4,
-                                        delay: menuOpen ? idx * 0.12 : 0
+                                        delay: menuOpen ? 0.2 + idx * 0.08 : 0
                                     }}
                                     className="text-white/50 text-sm self-center"
                                 >
                                     [0{idx + 1}]
                                 </motion.span>
 
-                                {/* Link - fixed height, no peek */}
+                                {/* Link */}
                                 <motion.div
-                                    initial={{ opacity: 0, x: -100 }}
+                                    initial={{ opacity: 0, y: -40 }}
                                     animate={
                                         menuOpen
-                                            ? { opacity: 1, x: 0 }
-                                            : { opacity: 0, x: -100 }
+                                            ? { opacity: 1, y: 0 }
+                                            : { opacity: 0, y: -40 }
                                     }
                                     transition={{
                                         duration: 0.5,
-                                        delay: menuOpen ? idx * 0.15 + 0.1 : 0
+                                        delay: menuOpen ? 0.25 + idx * 0.1 : 0,
+                                        ease: [0.76, 0, 0.24, 1]
                                     }}
                                     onMouseEnter={() => setHoverLink(idx)}
                                     onMouseLeave={() => setHoverLink(null)}
@@ -179,7 +181,10 @@ const Navbar = () => {
                                         className={`
                                             flex flex-col
                                             transition-transform duration-300 ease-out
-                                            ${hoverLink === idx ? "-translate-y-[calc(50%+15px)]" : "-translate-y-2 md:-translate-y-3"}
+                                            ${hoverLink === idx
+                                                ? "-translate-y-[calc(50%+10px)] sm:-translate-y-[calc(50%+15px)]"
+                                                : "-translate-y-1 sm:-translate-y-2 md:-translate-y-3"
+                                            }
                                         `}
                                         style={{ height: "200%" }}
                                     >
@@ -229,10 +234,11 @@ const Navbar = () => {
                         }
                         transition={{
                             duration: 0.5,
-                            delay: menuOpen ? 0.5 : 0
+                            delay: menuOpen ? 0.7 : 0
                         }}
                         className="
                             mt-auto
+                            mb-10 sm:mb-0
                             pt-8 pb-8
                             pl-5 sm:pl-10 lg:pl-16
                             flex flex-col
