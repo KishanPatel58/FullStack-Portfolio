@@ -11,9 +11,13 @@ const skillSchema = new Schema({
         default: "Beginner",
         required: true
     },
-    technologyImageUrl: {
-        type: String,
-        trim: true
+    technology: {
+        imageId: {
+            type: String
+        },
+        url: {
+            type: String
+        }
     }
 },{timestamps: true})
 

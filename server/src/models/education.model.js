@@ -9,11 +9,11 @@ const educationSchema = new Schema({
         type: String,
         default: ""
     },
-    study: [{
+    study: {
         type: String,
         required: true,
         enum: ["12th","10th","CSE","CS","IT","AIML","Cyber Security"]
-    }],
+    },
     grade: {
         title: {
             type: String,
