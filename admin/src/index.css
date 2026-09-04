@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import 'react-circular-progressbar/dist/styles.css';
 
 /* CSS Boiler Plate */
 * {
@@ -6,6 +7,7 @@
   text-decoration: none;
   box-sizing: border-box;
   user-select: none;
+  -webkit-user-drag: none;
 }
 
 ::-webkit-scrollbar{

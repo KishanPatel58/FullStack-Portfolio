@@ -18,6 +18,10 @@ const skillSchema = new Schema({
         url: {
             type: String
         }
+    },
+    category: {
+        type: Schema.Types.ObjectId,
+        ref: "Categorie"
     }
 },{timestamps: true})
 

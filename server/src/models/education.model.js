@@ -6,8 +6,12 @@ const educationSchema = new Schema({
         required: true
     },
     instituteLogo: {
-        type: String,
-        default: ""
+        url: {
+            type: String
+        },
+        imageId: {
+            type: String
+        }
     },
     study: {
         type: String,
