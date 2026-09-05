@@ -805,18 +805,17 @@ const Education = () => {
       // API REQUEST
       // -------------------------------------------------------
 
-      const response = await fetch(
+      const response = await api.delete(
         `/api/admin/education/${education._id}/delete`,
         {
-          method: "DELETE",
-          credentials: "include",
+          withCredentials: true
         }
       );
 
       const result =
-        await response.json();
+        await response.data;
 
-      if (!response.ok) {
+      if (!result.success) {
         throw new Error(
           result?.message ||
           "Failed to delete education."
