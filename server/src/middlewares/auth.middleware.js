@@ -1,11 +1,18 @@
 import jwt from "jsonwebtoken";
 import Admin from "../models/admin.model.js";
 
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  path: "/",
+};
+
 const generateAndSetAccessToken = (res, id) => {
   const accessToken = jwt.sign(
     {
       admin: {
-        _id: id,
+        _id: id.toString(),
       },
     },
     process.env.JWT_SECRET,
@@ -15,180 +22,179 @@ const generateAndSetAccessToken = (res, id) => {
   );
 
   res.cookie("token", accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    ...cookieOptions,
     maxAge: 15 * 60 * 1000,
   });
 
   return accessToken;
 };
 
+/**
+ * Try to restore session from:
+ * 1) expired access token (decode admin id) + DB refreshToken
+ * 2) OR refreshToken cookie (if access cookie is gone)
+ *
+ * Returns { admin } on success, or { error, clearCookies } on failure.
+ */
+const tryRefreshSession = async (req, res) => {
+  const accessToken = req.cookies?.token;
+  const refreshTokenCookie = req.cookies?.refreshToken;
+
+  let adminId = null;
+
+  // A) From expired / existing access token
+  if (accessToken) {
+    try {
+      const decoded = jwt.verify(accessToken, process.env.JWT_SECRET, {
+        ignoreExpiration: true,
+      });
+      adminId = decoded?.admin?._id || null;
+    } catch {
+      // ignore — may still use refresh cookie
+    }
+  }
+
+  // B) From refresh token cookie if no adminId yet
+  if (!adminId && refreshTokenCookie) {
+    try {
+      const decodedRefresh = jwt.verify(
+        refreshTokenCookie,
+        process.env.JWT_SECRET
+      );
+      adminId = decodedRefresh?.admin?._id || null;
+    } catch {
+      return {
+        error: "Invalid or expired refresh token. Please login again.",
+        clearCookies: true,
+      };
+    }
+  }
+
+  if (!adminId) {
+    return {
+      error: "Authentication token is required.",
+      clearCookies: false,
+    };
+  }
+
+  const admin = await Admin.findById(adminId).select(
+    "+refreshToken +refreshTokenExpiresIn"
+  );
+
+  if (!admin) {
+    return {
+      error: "Admin not found.",
+      clearCookies: true,
+    };
+  }
+
+  if (!admin.refreshToken) {
+    return {
+      error: "Session has expired. Please login again.",
+      clearCookies: true,
+    };
+  }
+
+  if (
+    !admin.refreshTokenExpiresIn ||
+    admin.refreshTokenExpiresIn < new Date()
+  ) {
+    admin.refreshToken = undefined;
+    admin.refreshTokenExpiresIn = undefined;
+    await admin.save();
+
+    return {
+      error: "Session has expired. Please login again.",
+      clearCookies: true,
+    };
+  }
+
+  // Prefer DB refresh token as source of truth
+  let decodedRefreshToken;
+  try {
+    decodedRefreshToken = jwt.verify(admin.refreshToken, process.env.JWT_SECRET);
+  } catch {
+    return {
+      error: "Invalid or expired refresh token. Please login again.",
+      clearCookies: true,
+    };
+  }
+
+  if (decodedRefreshToken?.admin?._id?.toString() !== admin._id.toString()) {
+    return {
+      error: "Invalid refresh token.",
+      clearCookies: true,
+    };
+  }
+
+  // If client sent refresh cookie, it should match DB (when present)
+  if (refreshTokenCookie && refreshTokenCookie !== admin.refreshToken) {
+    return {
+      error: "Invalid refresh token.",
+      clearCookies: true,
+    };
+  }
+
+  generateAndSetAccessToken(res, admin._id);
+
+  // Keep refresh cookie in sync (optional but recommended)
+  res.cookie("refreshToken", admin.refreshToken, {
+    ...cookieOptions,
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  });
+
+  return {
+    admin: { _id: admin._id },
+  };
+};
+
+const clearAuthCookies = (res) => {
+  res.clearCookie("token", cookieOptions);
+  res.clearCookie("refreshToken", cookieOptions);
+};
+
+// ============================================================
+// STRICT AUTH — protected admin routes
+// ============================================================
 export const authMiddleware = async (req, res, next) => {
   try {
     const accessToken = req.cookies?.token;
 
-    if (!accessToken) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication token is required.",
-      });
-    }
-
-    let decodedAccessToken;
-
-    try {
-      // Normal verification
-      decodedAccessToken = jwt.verify(
-        accessToken,
-        process.env.JWT_SECRET
-      );
-
-      req.admin = decodedAccessToken.admin;
-
-      return next();
-
-    } catch (error) {
-      // Token has expired
-      if (error.name !== "TokenExpiredError") {
-        return res.status(401).json({
-          success: false,
-          message: "Invalid authentication token.",
-        });
+    // 1) Valid access token
+    if (accessToken) {
+      try {
+        const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
+        req.admin = decoded.admin;
+        return next();
+      } catch (error) {
+        if (error.name !== "TokenExpiredError") {
+          clearAuthCookies(res);
+          return res.status(401).json({
+            success: false,
+            message: "Invalid authentication token.",
+          });
+        }
+        // expired → fall through to refresh
       }
     }
 
-    // ==========================================
-    // ACCESS TOKEN EXPIRED
-    // ==========================================
+    // 2) Missing or expired access token → try refresh
+    const result = await tryRefreshSession(req, res);
 
-    /*
-      IMPORTANT:
-
-      jwt.decode() only reads the token.
-      It does NOT verify the signature.
-
-      So first verify the signature while ignoring
-      expiration, then use the decoded payload.
-    */
-
-    decodedAccessToken = jwt.verify(
-      accessToken,
-      process.env.JWT_SECRET,
-      {
-        ignoreExpiration: true,
+    if (result.error) {
+      if (result.clearCookies) {
+        clearAuthCookies(res);
       }
-    );
-
-    const adminId = decodedAccessToken?.admin?._id;
-
-    if (!adminId) {
       return res.status(401).json({
         success: false,
-        message: "Invalid token payload.",
+        message: result.error,
       });
     }
 
-    // ==========================================
-    // FIND ADMIN AND GET REFRESH TOKEN
-    // ==========================================
-
-    const admin = await Admin.findById(adminId).select(
-      "+refreshToken +refreshTokenExpiresIn"
-    );
-
-    if (!admin) {
-      return res.status(401).json({
-        success: false,
-        message: "Admin not found.",
-      });
-    }
-
-    // Check refresh token exists in database
-    if (!admin.refreshToken) {
-      return res.status(401).json({
-        success: false,
-        message: "Session has expired. Please login again.",
-      });
-    }
-
-    // Check database refresh token expiry
-    if (
-      !admin.refreshTokenExpiresIn ||
-      admin.refreshTokenExpiresIn < new Date()
-    ) {
-      admin.refreshToken = undefined;
-      admin.refreshTokenExpiresIn = undefined;
-
-      await admin.save();
-
-      res.clearCookie("token", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-      });
-
-      return res.status(401).json({
-        success: false,
-        message: "Session has expired. Please login again.",
-      });
-    }
-
-    // ==========================================
-    // VERIFY REFRESH TOKEN
-    // ==========================================
-
-    let decodedRefreshToken;
-
-    try {
-      decodedRefreshToken = jwt.verify(
-        admin.refreshToken,
-        process.env.JWT_SECRET
-      );
-
-    } catch (error) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid or expired refresh token. Please login again.",
-      });
-    }
-
-    // ==========================================
-    // SECURITY CHECK
-    // ==========================================
-
-    if (
-      decodedRefreshToken?.admin?._id?.toString() !==
-      admin._id.toString()
-    ) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid refresh token.",
-      });
-    }
-
-    // ==========================================
-    // GENERATE NEW ACCESS TOKEN
-    // ==========================================
-
-    const newAccessToken = generateAndSetAccessToken(
-      res,
-      admin._id
-    );
-
-    // Make admin available to next middleware/controller
-    req.admin = {
-      _id: admin._id,
-    };
-
-    // Optional if you want it later
-    req.accessToken = newAccessToken;
-
+    req.admin = result.admin;
     return next();
-
   } catch (error) {
     console.error("Authentication Middleware Error:", error);
-
     return res.status(401).json({
       success: false,
       message: "Authentication failed.",
@@ -196,71 +202,37 @@ export const authMiddleware = async (req, res, next) => {
   }
 };
 
-// Use ONLY for session check like getadmin
+// ============================================================
+// OPTIONAL AUTH — getadmin / public session check
+// ============================================================
 export const optionalAuthMiddleware = async (req, res, next) => {
   try {
     const accessToken = req.cookies?.token;
 
-    if (!accessToken) {
-      req.admin = null;
-      return next(); // no 401
-    }
-
-    try {
-      const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
-      req.admin = decoded.admin;
-      return next();
-    } catch (error) {
-      // expired → try refresh (same idea as your main middleware), or soft-fail
-      if (error.name !== "TokenExpiredError") {
-        req.admin = null;
+    // 1) Valid access token
+    if (accessToken) {
+      try {
+        const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
+        req.admin = decoded.admin;
         return next();
+      } catch (error) {
+        if (error.name !== "TokenExpiredError") {
+          req.admin = null;
+          return next();
+        }
+        // expired → try refresh
       }
     }
 
-    // ---- access token expired: try refresh (simplified) ----
-    let decodedAccessToken;
-    try {
-      decodedAccessToken = jwt.verify(accessToken, process.env.JWT_SECRET, {
-        ignoreExpiration: true,
-      });
-    } catch {
+    // 2) Missing or expired → soft refresh (no hard 401)
+    const result = await tryRefreshSession(req, res);
+
+    if (result.error) {
       req.admin = null;
       return next();
     }
 
-    const adminId = decodedAccessToken?.admin?._id;
-    if (!adminId) {
-      req.admin = null;
-      return next();
-    }
-
-    const admin = await Admin.findById(adminId).select(
-      "+refreshToken +refreshTokenExpiresIn"
-    );
-
-    if (
-      !admin?.refreshToken ||
-      !admin.refreshTokenExpiresIn ||
-      admin.refreshTokenExpiresIn < new Date()
-    ) {
-      req.admin = null;
-      return next();
-    }
-
-    try {
-      const decodedRefresh = jwt.verify(admin.refreshToken, process.env.JWT_SECRET);
-      if (decodedRefresh?.admin?._id?.toString() !== admin._id.toString()) {
-        req.admin = null;
-        return next();
-      }
-    } catch {
-      req.admin = null;
-      return next();
-    }
-
-    generateAndSetAccessToken(res, admin._id);
-    req.admin = { _id: admin._id };
+    req.admin = result.admin;
     return next();
   } catch {
     req.admin = null;

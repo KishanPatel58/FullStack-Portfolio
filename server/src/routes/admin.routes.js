@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
-import { addCategory, addEducation, addSkill, deleteEducation, deleteProfile, deleteSkill, findCategory, updateEducation, updateProfile, updateSkill, uploadProfile } from "../controllers/admin.controller.js";
+import { addCategory, addEducation, addSkill, deleteCategory, deleteEducation, deleteProfile, deleteSkill, findCategory, getSkills, updateEducation, updateProfile, updateSkill, uploadProfile } from "../controllers/admin.controller.js";
 const adminRouter = Router()
 
 adminRouter.use(authMiddleware)
@@ -23,16 +23,22 @@ adminRouter.post("/categories/add", addCategory)
 // Fetch Category
 adminRouter.get("/categories", findCategory)
 
+// Delete Category
+adminRouter.delete("/categories/:id/delete", deleteCategory)
+
 
 
 // Add Skill
-adminRouter.post("/skills/add", addSkill)
+adminRouter.post("/skills/add", upload.single('skill'), addSkill)
+
+// Get Skill
+adminRouter.get("/skills", getSkills)
 
 // Update Skill
-adminRouter.put("/skills/skill/:id/update", updateSkill)
+adminRouter.put("/skills/:id/update", upload.single('skill'), updateSkill)
 
 // Delete Skill
-adminRouter.delete("/skills/skill/:id/delete", deleteSkill)
+adminRouter.delete("/skills/:id/delete", deleteSkill)
 
 
 

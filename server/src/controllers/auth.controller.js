@@ -307,28 +307,19 @@ const forgotPasswordOtpTemplate = ({ otp, name = "User" }) => {
 };
 
 function generateTokenAndSetToSession({ res, id }) {
+    const adminId = id.toString();
+    const jti = crypto.randomBytes(16).toString("hex");
+
     const accessToken = jwt.sign(
-        {
-            admin: {
-                _id: id,
-            },
-        },
+        { admin: { _id: adminId }, jti },
         process.env.JWT_SECRET,
-        {
-            expiresIn: "15m",
-        }
+        { expiresIn: "15m" }
     );
 
     const refreshToken = jwt.sign(
-        {
-            admin: {
-                _id: id,
-            },
-        },
+        { admin: { _id: adminId }, jti },
         process.env.JWT_SECRET,
-        {
-            expiresIn: "30d",
-        }
+        { expiresIn: "30d" }
     );
 
     res.cookie("token", accessToken, {
@@ -336,9 +327,10 @@ function generateTokenAndSetToSession({ res, id }) {
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         maxAge: 15 * 60 * 1000,
+        path: "/",
     });
 
-    return refreshToken;
+    return { accessToken, refreshToken };
 }
 
 function generateSecureOtp(otp) {
@@ -400,6 +392,17 @@ export const loginAdmin = async (req, res) => { // done
         // TODO: Send `otp` to admin's email
         // Html Template to send email.
         const html = verificationOtpTemplate({ otp, name: admin.name })
+        await Admin.findByIdAndUpdate(admin._id, {
+            $set: {
+                otp: generateSecureOtp(otp),
+                otpExpiresIn: new Date(Date.now() + 15 * 60 * 1000),
+                isVerified: false,
+            },
+            $unset: {
+                refreshToken: 1,
+                refreshTokenExpiresIn: 1,
+            },
+        });
         const emails = {
             email: admin.email,
             subject: "Email Verification Otp",
@@ -428,97 +431,154 @@ export const loginAdmin = async (req, res) => { // done
 };
 
 
-export const verifyEmail = async (req, res) => { //done
+export const verifyEmail = async (req, res) => {
+  try {
+    const { otp, email } = req.body;
+
+    if (!otp || !email) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP and email are required.",
+      });
+    }
+
+    const admin = await Admin.findOne({
+      email: email.toLowerCase().trim(),
+    }).select("+otp +otpExpiresIn +refreshToken +refreshTokenExpiresIn");
+
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin not found.",
+      });
+    }
+
+    if (!admin.otp || !admin.otpExpiresIn || admin.otpExpiresIn < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired.",
+      });
+    }
+
+    const hashedOtp = generateSecureOtp(String(otp));
+    if (admin.otp !== hashedOtp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP.",
+      });
+    }
+
+    // Create new access + refresh tokens
+    const { accessToken, refreshToken } = generateTokenAndSetToSession({
+      res,
+      id: admin._id,
+    });
+
+    // Cookie options (must match auth middleware)
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    };
+
+    // Access token cookie (15 minutes)
+    res.cookie("token", accessToken, {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000,
+    });
+
+    // Refresh token cookie (30 days) — used if access cookie is missing/expired
+    res.cookie("refreshToken", refreshToken, {
+      ...cookieOptions,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    const refreshTokenExpiresIn = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000
+    );
+
+    // Force-save session in DB
+    const updated = await Admin.findByIdAndUpdate(
+      admin._id,
+      {
+        $set: {
+          isVerified: true,
+          refreshToken,
+          refreshTokenExpiresIn,
+        },
+        $unset: {
+          otp: 1,
+          otpExpiresIn: 1,
+        },
+      },
+      { new: true }
+    ).select("+refreshToken +refreshTokenExpiresIn");
+
+    if (!updated?.refreshToken) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to create session. Please try again.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully.",
+    });
+  } catch (error) {
+    console.error("Email Verification Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Problem verifying your email.",
+    });
+  }
+};
+
+export const logoutAdmin = async (req, res) => {
     try {
-        const { otp, email } = req.body;
+        const accessToken = req.cookies?.token;
 
-        if (!otp || !email) {
-            return res.status(400).json({
-                success: false,
-                message: "OTP and email are required.",
-            });
+        if (accessToken) {
+            try {
+                const decoded = jwt.verify(accessToken, process.env.JWT_SECRET, {
+                    ignoreExpiration: true,
+                });
+                const adminId = decoded?.admin?._id;
+                if (adminId) {
+                    await Admin.findByIdAndUpdate(adminId, {
+                        $unset: { refreshToken: 1, refreshTokenExpiresIn: 1 },
+                        $set: { isVerified: false },
+                    });
+                }
+            } catch {
+                // ignore
+            }
         }
 
-        const admin = await Admin.findOne({
-            email: email.toLowerCase(),
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
         });
-
-        if (!admin) {
-            return res.status(404).json({
-                success: false,
-                message: "Admin not found.",
-            });
-        }
-
-        // Check if OTP exists and is expired
-        if (
-            !admin.otp ||
-            !admin.otpExpiresIn ||
-            admin.otpExpiresIn < new Date()
-        ) {
-            return res.status(400).json({
-                success: false,
-                message: "OTP has expired.",
-            });
-        }
-
-        // Hash the entered OTP
-        const hashedOtp = generateSecureOtp(otp);
-
-        // Verify OTP
-        if (admin.otp !== hashedOtp) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid OTP.",
-            });
-        }
-
-        // OTP verified
-        admin.otp = undefined;
-        admin.otpExpiresIn = undefined;
-        admin.isVerified = true;
-
-        // Generate tokens
-        const refreshToken = generateTokenAndSetToSession({
-            res,
-            id: admin._id,
-        });
-
-        admin.refreshToken = refreshToken;
-
-        admin.refreshTokenExpiresIn = new Date(
-            Date.now() + 30 * 24 * 60 * 60 * 1000
-        );
-
-        await admin.save();
 
         return res.status(200).json({
             success: true,
-            message: "Email verified successfully.",
+            message: "Logout successfully.",
         });
-
     } catch (error) {
-        console.error("Email Verification Error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Problem verifying your email.",
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+        });
+        return res.status(200).json({
+            success: true,
+            message: "Logout successfully.",
         });
     }
-};
-
-
-export const logoutAdmin = async (req, res) => { //done
-    res.clearCookie("token", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-    });
-
-    return res.status(200).json({
-        success: true,
-        message: "Logout successfully.",
-    });
 };
 
 // Send Forgot Password Otp

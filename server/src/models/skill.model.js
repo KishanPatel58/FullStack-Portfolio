@@ -22,6 +22,14 @@ const skillSchema = new Schema({
     category: {
         type: Schema.Types.ObjectId,
         ref: "Categorie"
+    },
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: "Admin"
+    },
+    level: {
+        type: Number,
+        required: true
     }
 },{timestamps: true})
 

@@ -105,6 +105,16 @@ const VALID_LEVELS = [
   "Specialist",
 ];
 
+const LEVEL_VALUES = {
+  Beginner: 15,
+  Elementary: 30,
+  Intermediate: 50,
+  "Upper-Intermediate": 70,
+  Advanced: 85,
+  Expert: 95,
+  Specialist: 100,
+};
+
 export const addSkill = async (req, res) => {
   try {
     const { name, levelOfKnowledge, category } = req.body;
@@ -140,9 +150,8 @@ export const addSkill = async (req, res) => {
       });
     }
 
-    // Optional: validate category if provided
     if (category) {
-      const categoryExists = await Categorie.findById(category); // import your Category model
+      const categoryExists = await Category.findById(category);
       if (!categoryExists) {
         return res.status(404).json({
           success: false,
@@ -154,13 +163,14 @@ export const addSkill = async (req, res) => {
     const skillData = {
       name: name.trim(),
       levelOfKnowledge,
+      level: LEVEL_VALUES[levelOfKnowledge], // number for progress UI
+      user: admin._id,
     };
 
     if (category) {
       skillData.category = category;
     }
 
-    // Upload image first (if provided)
     if (file) {
       const result = await uploadImage(file);
       skillData.technology = {
@@ -173,7 +183,6 @@ export const addSkill = async (req, res) => {
 
     if (!admin.about) admin.about = {};
     if (!Array.isArray(admin.about.skills)) admin.about.skills = [];
-
     admin.about.skills.push(skill._id);
     await admin.save();
 
@@ -217,13 +226,6 @@ export const updateSkill = async (req, res) => {
       });
     }
 
-    if (levelOfKnowledge && !VALID_LEVELS.includes(levelOfKnowledge)) {
-      return res.status(400).json({
-        success: false,
-        message: `Invalid level of knowledge. Allowed: ${VALID_LEVELS.join(", ")}`,
-      });
-    }
-
     const admin = await Admin.findById(adminId);
     if (!admin) {
       return res.status(404).json({
@@ -232,6 +234,7 @@ export const updateSkill = async (req, res) => {
       });
     }
 
+    // Ownership: skill must belong to this admin
     const skillBelongsToAdmin = admin.about?.skills?.some(
       (skill) => skill.toString() === skillId
     );
@@ -251,15 +254,29 @@ export const updateSkill = async (req, res) => {
       });
     }
 
-    if (name) skill.name = name.trim();
-    if (levelOfKnowledge) skill.levelOfKnowledge = levelOfKnowledge;
+    // Name
+    if (name) {
+      skill.name = name.trim();
+    }
 
-    // Update / clear category
+    // Level of knowledge + numeric level
+    if (levelOfKnowledge) {
+      if (!VALID_LEVELS.includes(levelOfKnowledge)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid level of knowledge. Allowed: ${VALID_LEVELS.join(", ")}`,
+        });
+      }
+      skill.levelOfKnowledge = levelOfKnowledge;
+      skill.level = LEVEL_VALUES[levelOfKnowledge];
+    }
+
+    // Category
     if (category !== undefined) {
       if (category === null || category === "") {
         skill.category = undefined;
       } else {
-        const categoryExists = await Categorie.findById(category);
+        const categoryExists = await Category.findById(category);
         if (!categoryExists) {
           return res.status(404).json({
             success: false,
@@ -270,6 +287,7 @@ export const updateSkill = async (req, res) => {
       }
     }
 
+    // Image (optional)
     if (file) {
       const result = await uploadImage(file);
       const oldFileId = skill.technology?.imageId;
@@ -388,6 +406,45 @@ export const deleteSkill = async (req, res) => {
     });
   }
 };
+
+export const getSkills = async (req, res) => {
+  try {
+    const adminId = req?.admin?._id || req?.admin?.id;
+    if (!adminId) {
+      return res.status(401).json({
+        success: false,
+        message: "Please Login First."
+      })
+    }
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "You Are not Authorized!"
+      })
+    }
+    const skills = await Skills.find({ user: admin._id }).populate("category", "name") // only name (and _id by default)
+      .sort({ createdAt: -1 });
+    if (!skills) {
+      return res.json({
+        success: false,
+        message: "No Skills Found."
+      })
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Category Fetched Successfully.",
+      skills
+    })
+  } catch (error) {
+    console.error("Failed to Fetch Categories:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to Fetch Categories.",
+    });
+  }
+}
 
 // Add Education
 export const addEducation = async (req, res) => {
@@ -755,9 +812,13 @@ export const deleteEducation = async (req, res) => {
 
 export const addCategory = async (req, res) => {
   try {
+    console.log("Before admin id called..")
     const adminId = req?.admin?._id || req?.admin?.id;
+    console.log("After admin id callsed..")
     const { name } = req.body;
-    if (!name) {
+    const categoryName = name?.trim().toLowerCase();
+    console.log("Category Name:", categoryName)
+    if (!categoryName) {
       return res.status(400).json({
         success: false,
         message: "Please Give Name to add Category."
@@ -770,19 +831,28 @@ export const addCategory = async (req, res) => {
       })
     }
     const admin = await Admin.findById(adminId);
+    console.log("Admin Found.")
     if (!admin) {
       return res.status(404).json({
         success: false,
         message: "You Are not Authorized!"
       })
     }
+    const categoryExists = await Category.findOne({ name: categoryName })
+    if (categoryExists) {
+      return res.status(401).json({
+        success: false,
+        message: "Category Already Exists."
+      })
+    }
     const category = await Category.create({
-      name,
+      name: categoryName,
       user: admin._id
     })
     return res.status(201).json({
       success: true,
-      message: "Category Added Successfully..."
+      message: "Category Added Successfully...",
+      category
     })
   } catch (error) {
     console.error("Failed to Add Category:", error);
@@ -809,17 +879,17 @@ export const findCategory = async (req, res) => {
         message: "You Are not Authorized!"
       })
     }
-    const categories = await Category.find({user: admin._id});
-    if(!categories){
+    const categories = await Category.find({ user: admin._id });
+    if (!categories) {
       return res.json({
         success: false,
-        message:"No Categories Found."
+        message: "No Categories Found."
       })
     }
     return res.status(200).json({
       success: true,
       message: "Category Fetched Successfully.",
-      categories: categories
+      categories
     })
   } catch (error) {
     console.error("Failed to Fetch Categories:", error);
@@ -830,3 +900,92 @@ export const findCategory = async (req, res) => {
     });
   }
 }
+
+export const deleteCategory = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const adminId = req?.admin?._id || req?.admin?.id;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a category to delete.",
+      });
+    }
+
+    if (!adminId) {
+      return res.status(401).json({
+        success: false,
+        message: "Please login first.",
+      });
+    }
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "You are not authorized.",
+      });
+    }
+
+    // Only delete category owned by this admin
+    const category = await Category.findOneAndDelete({
+      _id: id,
+      user: admin._id,
+    });
+
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found.",
+      });
+    }
+
+    // Find skills linked to this category (for this admin)
+    const skillsToDelete = await Skills.find({
+      category: id,
+      user: admin._id,
+    });
+
+    const skillIds = skillsToDelete.map((s) => s._id);
+
+    // Delete skill images from ImageKit
+    for (const skill of skillsToDelete) {
+      if (skill.technology?.imageId) {
+        try {
+          await deleteImage(skill.technology.imageId);
+        } catch (imageError) {
+          console.error("Failed to delete skill image:", imageError);
+        }
+      }
+    }
+
+    // Delete skills from DB
+    if (skillIds.length > 0) {
+      await Skills.deleteMany({
+        _id: { $in: skillIds },
+        user: admin._id,
+      });
+
+      // Remove skill refs from admin.about.skills
+      if (Array.isArray(admin.about?.skills)) {
+        admin.about.skills = admin.about.skills.filter(
+          (skillId) => !skillIds.some((id) => id.toString() === skillId.toString())
+        );
+        await admin.save();
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Category and related skills deleted successfully.",
+      deletedSkillsCount: skillIds.length,
+    });
+  } catch (error) {
+    console.error("Failed to Delete Category:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete category.",
+    });
+  }
+};
