@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
-import { addCategory, addEducation, addSkill, deleteCategory, deleteEducation, deleteProfile, deleteSkill, findCategory, getSkills, updateEducation, updateProfile, updateSkill, uploadProfile } from "../controllers/admin.controller.js";
+import { addCategory, addEducation, addSkill, deleteCategory, deleteEducation, deleteProfile, deleteSkill, findCategory, getEducations, getSkills, updateEducation, updateProfile, updateSkill, uploadProfile } from "../controllers/admin.controller.js";
 const adminRouter = Router()
 
 adminRouter.use(authMiddleware)
@@ -41,14 +41,34 @@ adminRouter.put("/skills/:id/update", upload.single('skill'), updateSkill)
 adminRouter.delete("/skills/:id/delete", deleteSkill)
 
 
+// =========================
+// EDUCATION
+// =========================
+
+// Get Education
+adminRouter.get(
+    "/education",
+    getEducations
+);
 
 // Add Education
-adminRouter.post("/education/add", addEducation)
+adminRouter.post(
+    "/education/add",
+    upload.single("educationLogo"),
+    addEducation
+);
 
 // Update Education
-adminRouter.put("/education/:id/update", updateEducation)
+adminRouter.put(
+    "/education/:id/update",
+    upload.single("educationLogo"),
+    updateEducation
+);
 
-// Add Education
-adminRouter.delete("/education/:id/delete", deleteEducation)
+// Delete Education
+adminRouter.delete(
+    "/education/:id/delete",
+    deleteEducation
+);
 
 export default adminRouter;

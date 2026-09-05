@@ -48,3 +48,13 @@ body {
   border-right: 15px solid #101010;
   border-bottom: 10px solid transparent;
 }
+
+
+/* Styling For Table */
+th{
+  font-size: large;
+}
+td,th{
+  border: 1px solid black;
+  padding: 5px 10px;
+}

@@ -446,20 +446,35 @@ export const getSkills = async (req, res) => {
   }
 }
 
-// Add Education
+// =========================================================
+// ADD EDUCATION
+// =========================================================
+
 export const addEducation = async (req, res) => {
   try {
-    const adminId = req.admin?._id || req.admin?.id;
+    // =======================================================
+    // GET DATA
+    // =======================================================
+
+    const adminId =
+      req.admin?._id ||
+      req.admin?.id;
+
     const {
-      passedYear,
-      grade,
-      study,
       instituteName,
+      study,
+      grade,
+      currentlyStudying,
+      passedYear,
+      address,
     } = req.body;
 
     const file = req.file;
 
-    // Check login
+    // =======================================================
+    // AUTH CHECK
+    // =======================================================
+
     if (!adminId) {
       return res.status(401).json({
         success: false,
@@ -467,22 +482,10 @@ export const addEducation = async (req, res) => {
       });
     }
 
-    // Validate required fields
-    if (
-      !passedYear ||
-      !study ||
-      !instituteName ||
-      !grade?.title ||
-      grade?.value === undefined ||
-      grade?.value === null
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields are required.",
-      });
-    }
+    // =======================================================
+    // FIND ADMIN
+    // =======================================================
 
-    // Find admin
     const admin = await Admin.findById(adminId);
 
     if (!admin) {
@@ -492,19 +495,232 @@ export const addEducation = async (req, res) => {
       });
     }
 
+    // =======================================================
+    // VALIDATE INSTITUTE NAME
+    // =======================================================
+
+    if (!instituteName?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Institute name is required.",
+      });
+    }
+
+    // =======================================================
+    // VALIDATE STUDY
+    // =======================================================
+
+    const validStudies = [
+      "10th",
+      "12th",
+      "CSE",
+      "CS",
+      "IT",
+      "AIML",
+      "Cyber Security",
+    ];
+
+    if (!study?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Study is required.",
+      });
+    }
+
+    if (!validStudies.includes(study.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid study. Allowed: ${validStudies.join(", ")}`,
+      });
+    }
+
+    // =======================================================
+    // PARSE CURRENTLY STUDYING
+    // =======================================================
+    //
+    // Frontend sends FormData, therefore boolean arrives
+    // as a string:
+    //
+    // "true"
+    // "false"
+    //
+    // =======================================================
+
+    const isCurrentlyStudying =
+      currentlyStudying === true ||
+      currentlyStudying === "true";
+
+    // =======================================================
+    // PARSE GRADE
+    // =======================================================
+
+    let parsedGrade = grade;
+
+    // FormData sends grade as JSON string.
+    if (typeof grade === "string") {
+      try {
+        parsedGrade = JSON.parse(grade);
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid grade data.",
+        });
+      }
+    }
+
+    // =======================================================
+    // VALIDATE GRADE
+    // =======================================================
+
+    const validGradeTitles = [
+      "cgpa",
+      "gpa",
+      "spi",
+      "percentage",
+    ];
+
+    const gradeTitle =
+      parsedGrade?.title
+        ?.toString()
+        ?.trim()
+        ?.toLowerCase();
+
+    if (!gradeTitle) {
+      return res.status(400).json({
+        success: false,
+        message: "Grade title is required.",
+      });
+    }
+
+    if (!validGradeTitles.includes(gradeTitle)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid grade title. Allowed: ${validGradeTitles.join(", ")}`,
+      });
+    }
+
+    // =======================================================
+    // GRADE VALUE
+    // =======================================================
+
+    if (
+      parsedGrade?.value === undefined ||
+      parsedGrade?.value === null ||
+      parsedGrade?.value === ""
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Grade value is required.",
+      });
+    }
+
+    const gradeValue =
+      Number(parsedGrade.value);
+
+    if (Number.isNaN(gradeValue)) {
+      return res.status(400).json({
+        success: false,
+        message: "Grade value must be a number.",
+      });
+    }
+
+    // =======================================================
+    // VALIDATE ADDRESS
+    // =======================================================
+
+    if (!address?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Address is required.",
+      });
+    }
+
+    // =======================================================
+    // PASSED YEAR LOGIC
+    // =======================================================
+    //
+    // CURRENTLY STUDYING = TRUE
+    // ---------------------------------
+    // passedYear MUST be null.
+    //
+    // CURRENTLY STUDYING = FALSE
+    // ---------------------------------
+    // passedYear MUST be provided.
+    //
+    // =======================================================
+
+    let parsedPassedYear = null;
+
+    if (isCurrentlyStudying) {
+      // Currently studying.
+      // No passed year.
+      parsedPassedYear = null;
+    } else {
+      // Completed education.
+      if (!passedYear) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Passed year is required when currently studying is unchecked.",
+        });
+      }
+
+      parsedPassedYear =
+        new Date(passedYear);
+
+      if (
+        Number.isNaN(
+          parsedPassedYear.getTime()
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid passed year.",
+        });
+      }
+    }
+
+    // =======================================================
+    // CREATE EDUCATION DATA
+    // =======================================================
+
     const educationData = {
-      instituteName,
-      study,
-      passedYear,
+      instituteName:
+        instituteName.trim(),
+
+      // IMPORTANT:
+      // This is now the actual study.
+      //
+      // Example:
+      // IT
+      // AIML
+      // CSE
+      study: study.trim(),
+
       grade: {
-        title: grade.title,
-        value: Number(grade.value),
+        title: gradeTitle,
+        value: gradeValue,
       },
+
+      currentlyStudying:
+        isCurrentlyStudying,
+
+      passedYear:
+        parsedPassedYear,
+
+      address:
+        address.trim(),
+
+      user: admin._id,
     };
 
-    // Upload institute logo
+    // =======================================================
+    // UPLOAD LOGO
+    // =======================================================
+
     if (file) {
-      const result = await uploadImage(file);
+      const result =
+        await uploadImage(file);
 
       educationData.instituteLogo = {
         url: result.url,
@@ -512,232 +728,127 @@ export const addEducation = async (req, res) => {
       };
     }
 
-    // Create education
-    const education = await Education.create(educationData);
+    // =======================================================
+    // CREATE EDUCATION
+    // =======================================================
 
-    // Add education reference to admin
-    admin.about.education.push(education._id);
+    const education =
+      await Education.create(
+        educationData
+      );
+
+    // =======================================================
+    // ADD EDUCATION ID TO ADMIN
+    // =======================================================
+
+    if (!admin.about) {
+      admin.about = {};
+    }
+
+    if (
+      !Array.isArray(
+        admin.about.education
+      )
+    ) {
+      admin.about.education = [];
+    }
+
+    admin.about.education.push(
+      education._id
+    );
 
     await admin.save();
 
+    // =======================================================
+    // RESPONSE
+    // =======================================================
+
     return res.status(201).json({
       success: true,
-      message: "Education added successfully.",
+      message:
+        "Education added successfully.",
       education,
     });
 
   } catch (error) {
-    console.error("Failed to add education:", error);
+    console.error(
+      "Failed to add education:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Failed to add education.",
+      message:
+        error.message ||
+        "Failed to add education.",
     });
   }
 };
 
 
 // export const update education.
-export const updateEducation = async (req, res) => {
+// =========================================================
+// UPDATE EDUCATION
+// =========================================================
+
+export const updateEducation = async (
+  req,
+  res
+) => {
   try {
-    const adminId = req.admin?._id || req.admin?.id;
+    // =======================================================
+    // GET DATA
+    // =======================================================
+
+    const adminId =
+      req.admin?._id ||
+      req.admin?.id;
+
+    const {
+      id: educationId,
+    } = req.params;
 
     const {
       instituteName,
       study,
       grade,
-      passedYear
+      currentlyStudying,
+      passedYear,
+      address,
     } = req.body;
 
     const file = req.file;
-    const { id: educationId } = req.params;
 
-    // Check education ID
+    // =======================================================
+    // CHECK EDUCATION ID
+    // =======================================================
+
     if (!educationId) {
       return res.status(400).json({
         success: false,
-        message: "Please select education to update."
+        message:
+          "Please select education to update.",
       });
     }
 
-    // Check authentication
+    // =======================================================
+    // AUTH CHECK
+    // =======================================================
+
     if (!adminId) {
       return res.status(401).json({
         success: false,
-        message: "Please login first."
+        message:
+          "Please login first.",
       });
     }
 
-    // Find admin
-    const admin = await Admin.findById(adminId);
+    // =======================================================
+    // FIND ADMIN
+    // =======================================================
 
-    if (!admin) {
-      return res.status(404).json({
-        success: false,
-        message: "Admin not found."
-      });
-    }
-
-    // Check whether education belongs to current admin
-    const isValidId = admin.about?.education?.some(
-      (id) => id.toString() === educationId
-    );
-
-    if (!isValidId) {
-      return res.status(403).json({
-        success: false,
-        message: "You are not authorized to update this education."
-      });
-    }
-
-    // Find education
-    const education = await Education.findById(educationId);
-
-    if (!education) {
-      return res.status(404).json({
-        success: false,
-        message: "Education not found."
-      });
-    }
-
-    // =========================
-    // UPDATE BASIC FIELDS
-    // =========================
-
-    if (
-      instituteName &&
-      education.instituteName !== instituteName
-    ) {
-      education.instituteName = instituteName;
-    }
-
-    if (
-      study &&
-      education.study !== study
-    ) {
-      education.study = study;
-    }
-
-    // =========================
-    // UPDATE GRADE
-    // =========================
-
-    if (
-      grade &&
-      (
-        grade.title &&
-        education.grade.title !== grade.title
-        ||
-        grade.value !== undefined &&
-        Number(education.grade.value) !== Number(grade.value)
-      )
-    ) {
-      education.grade = {
-        title: grade.title || education.grade.title,
-        value:
-          grade.value !== undefined
-            ? Number(grade.value)
-            : education.grade.value
-      };
-    }
-
-    // =========================
-    // UPDATE PASSED YEAR
-    // =========================
-
-    if (passedYear) {
-      const oldDate = new Date(education.passedYear).getTime();
-      const newDate = new Date(passedYear).getTime();
-
-      if (oldDate !== newDate) {
-        education.passedYear = new Date(passedYear);
-      }
-    }
-
-    // =========================
-    // UPDATE LOGO
-    // =========================
-
-    let oldFileId;
-
-    if (file) {
-      // Save old image ID
-      oldFileId = education.instituteLogo?.imageId;
-
-      // Upload new image first
-      const result = await uploadImage(file);
-
-      // Update education document
-      education.instituteLogo = {
-        url: result.url,
-        imageId: result.fileId
-      };
-    }
-
-    // =========================
-    // SAVE DATABASE
-    // =========================
-
-    await education.save();
-
-    // =========================
-    // DELETE OLD IMAGE
-    // Only after successful DB save
-    // =========================
-
-    if (oldFileId) {
-      try {
-        await deleteImage(oldFileId);
-      } catch (deleteError) {
-        console.error(
-          "Failed to delete old education logo:",
-          deleteError
-        );
-      }
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Education updated successfully.",
-      education
-    });
-
-  } catch (error) {
-    console.error(
-      "Failed to update education:",
-      error
-    );
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to update education."
-    });
-  }
-};
-
-export const deleteEducation = async (req, res) => {
-  try {
-    const adminId = req.admin?.id || req.admin?._id;
-    const { id: educationId } = req.params;
-
-    // Check education ID
-    if (!educationId) {
-      return res.status(400).json({
-        success: false,
-        message: "Please select education to delete.",
-      });
-    }
-
-    // Check authentication
-    if (!adminId) {
-      return res.status(401).json({
-        success: false,
-        message: "Please login first.",
-      });
-    }
-
-    // Find admin
-    const admin = await Admin.findById(adminId);
+    const admin =
+      await Admin.findById(adminId);
 
     if (!admin) {
       return res.status(404).json({
@@ -746,66 +857,588 @@ export const deleteEducation = async (req, res) => {
       });
     }
 
-    // Check ownership
-    const isValidEducation = admin.about?.education?.some(
-      (educationIdFromAdmin) =>
-        educationIdFromAdmin.toString() === educationId
-    );
+    // =======================================================
+    // CHECK OWNERSHIP
+    // =======================================================
 
-    if (!isValidEducation) {
+    const isEducationOwned =
+      admin.about?.education?.some(
+        (id) =>
+          id.toString() ===
+          educationId
+      );
+
+    if (!isEducationOwned) {
       return res.status(403).json({
         success: false,
-        message: "You are not authorized to delete this education.",
+        message:
+          "You are not authorized to update this education.",
       });
     }
 
-    // Find education
-    const education = await Education.findById(educationId);
+    // =======================================================
+    // FIND EDUCATION
+    // =======================================================
+
+    const education =
+      await Education.findById(
+        educationId
+      );
 
     if (!education) {
       return res.status(404).json({
         success: false,
-        message: "Education not found.",
+        message:
+          "Education not found.",
       });
     }
 
-    // Save ImageKit ID before deleting document
-    const oldImageId = education.instituteLogo?.imageId;
+    // =======================================================
+    // VALID STUDIES
+    // =======================================================
 
-    // Delete education from MongoDB
-    await education.deleteOne();
+    const validStudies = [
+      "10th",
+      "12th",
+      "CSE",
+      "CS",
+      "IT",
+      "AIML",
+      "Cyber Security",
+    ];
 
-    // Remove education reference from admin
-    admin.about.education = admin.about.education.filter(
-      (educationIdFromAdmin) =>
-        educationIdFromAdmin.toString() !== educationId
-    );
+    // =======================================================
+    // UPDATE INSTITUTE NAME
+    // =======================================================
 
-    await admin.save();
+    if (
+      instituteName !== undefined
+    ) {
+      if (!instituteName.trim()) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Institute name cannot be empty.",
+        });
+      }
 
-    // Delete logo from ImageKit
+      education.instituteName =
+        instituteName.trim();
+    }
+
+    // =======================================================
+    // UPDATE STUDY
+    // =======================================================
+
+    if (study !== undefined) {
+      const trimmedStudy =
+        study.trim();
+
+      if (!trimmedStudy) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Study cannot be empty.",
+        });
+      }
+
+      if (
+        !validStudies.includes(
+          trimmedStudy
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid study. Allowed: ${validStudies.join(", ")}`,
+        });
+      }
+
+      education.study =
+        trimmedStudy;
+    }
+
+    // =======================================================
+    // UPDATE GRADE
+    // =======================================================
+
+    if (grade !== undefined) {
+      // -----------------------------------------------------
+      // Parse grade
+      // -----------------------------------------------------
+
+      let parsedGrade = grade;
+
+      if (typeof grade === "string") {
+        try {
+          parsedGrade =
+            JSON.parse(grade);
+        } catch (error) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Invalid grade data.",
+          });
+        }
+      }
+
+      // -----------------------------------------------------
+      // Valid grade titles
+      // -----------------------------------------------------
+
+      const validGradeTitles = [
+        "cgpa",
+        "gpa",
+        "spi",
+        "percentage",
+      ];
+
+      // -----------------------------------------------------
+      // Grade title
+      // -----------------------------------------------------
+
+      if (
+        parsedGrade?.title !==
+        undefined
+      ) {
+        const gradeTitle =
+          parsedGrade.title
+            .toString()
+            .trim()
+            .toLowerCase();
+
+        if (
+          !validGradeTitles.includes(
+            gradeTitle
+          )
+        ) {
+          return res.status(400).json({
+            success: false,
+            message:
+              `Invalid grade title. Allowed: ${validGradeTitles.join(", ")}`,
+          });
+        }
+
+        education.grade.title =
+          gradeTitle;
+      }
+
+      // -----------------------------------------------------
+      // Grade value
+      // -----------------------------------------------------
+
+      if (
+        parsedGrade?.value !==
+          undefined &&
+        parsedGrade?.value !== ""
+      ) {
+        const gradeValue =
+          Number(
+            parsedGrade.value
+          );
+
+        if (
+          Number.isNaN(
+            gradeValue
+          )
+        ) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Grade value must be a number.",
+          });
+        }
+
+        education.grade.value =
+          gradeValue;
+      }
+    }
+
+    // =======================================================
+    // CURRENTLY STUDYING
+    // =======================================================
+    //
+    // Frontend sends:
+    //
+    // "true"
+    // "false"
+    //
+    // =======================================================
+
+    let isCurrentlyStudying;
+
+    if (
+      currentlyStudying !==
+      undefined
+    ) {
+      isCurrentlyStudying =
+        currentlyStudying === true ||
+        currentlyStudying ===
+          "true";
+
+      education.currentlyStudying =
+        isCurrentlyStudying;
+    } else {
+      // If old request does not send
+      // currentlyStudying, keep existing
+      // value.
+      isCurrentlyStudying =
+        education.currentlyStudying ===
+        true;
+    }
+
+    // =======================================================
+    // PASSED YEAR LOGIC
+    // =======================================================
+    //
+    // If currently studying:
+    //
+    //     passedYear = null
+    //
+    // If not currently studying:
+    //
+    //     passedYear is required.
+    //
+    // =======================================================
+
+    if (isCurrentlyStudying) {
+
+      // -----------------------------------------------------
+      // CURRENT STUDENT
+      // -----------------------------------------------------
+
+      education.passedYear = null;
+
+    } else {
+
+      // -----------------------------------------------------
+      // COMPLETED STUDENT
+      // -----------------------------------------------------
+
+      if (!passedYear) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Passed year is required when currently studying is unchecked.",
+        });
+      }
+
+      const newPassedYear =
+        new Date(passedYear);
+
+      if (
+        Number.isNaN(
+          newPassedYear.getTime()
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid passed year.",
+        });
+      }
+
+      education.passedYear =
+        newPassedYear;
+    }
+
+    // =======================================================
+    // UPDATE ADDRESS
+    // =======================================================
+
+    if (
+      address !== undefined
+    ) {
+      if (!address.trim()) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Address cannot be empty.",
+        });
+      }
+
+      education.address =
+        address.trim();
+    }
+
+    // =======================================================
+    // UPDATE LOGO
+    // =======================================================
+
+    let oldImageId = null;
+
+    if (file) {
+
+      // -----------------------------------------------------
+      // Save old image ID
+      // -----------------------------------------------------
+
+      oldImageId =
+        education
+          .instituteLogo
+          ?.imageId || null;
+
+      // -----------------------------------------------------
+      // Upload new image
+      // -----------------------------------------------------
+
+      const result =
+        await uploadImage(file);
+
+      // -----------------------------------------------------
+      // Replace image
+      // -----------------------------------------------------
+
+      education.instituteLogo = {
+        url: result.url,
+        imageId: result.fileId,
+      };
+    }
+
+    // =======================================================
+    // SAVE EDUCATION
+    // =======================================================
+
+    await education.save();
+
+    // =======================================================
+    // DELETE OLD IMAGE
+    // =======================================================
+
     if (oldImageId) {
       try {
-        await deleteImage(oldImageId);
+        await deleteImage(
+          oldImageId
+        );
       } catch (imageError) {
+        console.error(
+          "Failed to delete old education logo:",
+          imageError
+        );
+
+        // Don't fail the entire update
+        // because database update succeeded.
+      }
+    }
+
+    // =======================================================
+    // RESPONSE
+    // =======================================================
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Education updated successfully.",
+      education,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Failed to update education:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        "Failed to update education.",
+    });
+  }
+};
+
+// =========================
+// Delete Education
+// =========================
+
+export const deleteEducation = async (req, res) => {
+  try {
+
+    // =========================
+    // GET DATA
+    // =========================
+
+    const adminId =
+      req.admin?._id ||
+      req.admin?.id;
+
+    const { id: educationId } =
+      req.params;
+
+
+    // =========================
+    // CHECK EDUCATION ID
+    // =========================
+
+    if (!educationId) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Please select education to delete."
+      });
+    }
+
+
+    // =========================
+    // CHECK AUTHENTICATION
+    // =========================
+
+    if (!adminId) {
+      return res.status(401).json({
+        success: false,
+        message:
+          "Please login first."
+      });
+    }
+
+
+    // =========================
+    // FIND ADMIN
+    // =========================
+
+    const admin =
+      await Admin.findById(adminId);
+
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Admin not found."
+      });
+    }
+
+
+    // =========================
+    // CHECK OWNERSHIP
+    // =========================
+
+    const isEducationOwned =
+      admin.about?.education?.some(
+        (id) =>
+          id.toString() === educationId
+      );
+
+    if (!isEducationOwned) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "You are not authorized to delete this education."
+      });
+    }
+
+
+    // =========================
+    // FIND EDUCATION
+    // =========================
+
+    const education =
+      await Education.findById(
+        educationId
+      );
+
+    if (!education) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Education not found."
+      });
+    }
+
+
+    // =========================
+    // SAVE IMAGE ID
+    // BEFORE DELETE
+    // =========================
+
+    const oldImageId =
+      education.instituteLogo?.imageId ||
+      null;
+
+
+    // =========================
+    // DELETE EDUCATION
+    // FROM MONGODB
+    // =========================
+
+    await Education.findByIdAndDelete(
+      educationId
+    );
+
+
+    // =========================
+    // REMOVE EDUCATION ID
+    // FROM ADMIN
+    // =========================
+
+    if (
+      Array.isArray(
+        admin.about?.education
+      )
+    ) {
+
+      admin.about.education =
+        admin.about.education.filter(
+          (id) =>
+            id.toString() !==
+            educationId
+        );
+
+      await admin.save();
+    }
+
+
+    // =========================
+    // DELETE IMAGEKIT IMAGE
+    // =========================
+
+    if (oldImageId) {
+
+      try {
+
+        await deleteImage(
+          oldImageId
+        );
+
+      } catch (imageError) {
+
         console.error(
           "Failed to delete education logo from ImageKit:",
           imageError
         );
+
+        /*
+            We don't return an error here
+            because the education itself
+            was successfully deleted.
+        */
       }
     }
 
+
+    // =========================
+    // RESPONSE
+    // =========================
+
     return res.status(200).json({
       success: true,
-      message: "Education deleted successfully.",
+      message:
+        "Education deleted successfully.",
+      deletedEducationId:
+        educationId
     });
 
+
   } catch (error) {
-    console.error("Failed to delete education:", error);
+
+    console.error(
+      "Failed to delete education:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Failed to delete education.",
+      message:
+        "Failed to delete education."
     });
   }
 };
@@ -989,3 +1622,42 @@ export const deleteCategory = async (req, res) => {
     });
   }
 };
+
+export const getEducations = async (req, res) => {
+  try {
+    const adminId = req?.admin?._id || req?.admin?.id;
+
+    if (!adminId) {
+      return res.status(401).json({
+        success: false,
+        message: "Please login first.",
+      });
+    }
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "You are not authorized.",
+      });
+    }
+    const educations = await Education.find({ user: admin._id })
+    if (!educations.length > 0) {
+      return res.json({
+        success: false,
+        message: "No Education Found."
+      })
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Education Fetch Successfully.",
+      educations: educations
+    })
+  } catch (error) {
+    console.log(`Failed to Fetch Education: ${error}`)
+    return res.status(500).json({
+      success: false,
+      message: "Failed to Fetch Education."
+    })
+  }
+}
