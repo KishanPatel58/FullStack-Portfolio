@@ -11,6 +11,8 @@ import Skills from './pages/admin/Skills'
 import Education from './pages/admin/Education'
 import Experience from './pages/admin/Experience'
 import Projects from './pages/admin/Projects'
+import SelectedProjectPage from './pages/admin/SelectedProjectPage'
+import About from './pages/admin/About';
 
 const App = () => {
   return (
@@ -32,8 +34,8 @@ const App = () => {
             <Route path='education' element={<Education />} />
             <Route path='experience' element={<Experience />} />
             <Route path='projects' element={<Projects />} />
-            {/* Add more admin pages here later */}
-            {/* <Route path='projects' element={<Projects />} /> */}
+            <Route path='projects/:id' element={<SelectedProjectPage />} />
+            <Route path='about' element={<About />} />
           </Route>
         </Route>
 

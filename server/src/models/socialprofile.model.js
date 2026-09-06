@@ -3,8 +3,7 @@ const socialProfileSchema = new Schema({
 
     name: {
         type: String,
-        required: true,
-        enum: ["instagram", "linkedin", "twitter", "facebook"]
+        required: true
     },
     link: {
         type: String,

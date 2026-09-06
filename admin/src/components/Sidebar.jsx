@@ -1,4 +1,4 @@
-import { BookMarked, BookOpen, BriefcaseBusiness, FolderGit2, GraduationCap, LayoutDashboard, LogOut, PanelLeft } from 'lucide-react'
+import { BookMarked, BookOpen, BriefcaseBusiness, ContactRound, FolderGit2, GraduationCap, LayoutDashboard, LogOut, PanelLeft } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom';
 import { UseAdmin } from '../context/AdminContext';
@@ -15,6 +15,7 @@ const Sidebar = () => {
     { name: "Education", to: "/admin/education", icon: BookOpen },
     { name: "Experience", to: "/admin/experience", icon: BookMarked },
     { name: "Projects", to: "/admin/projects", icon: FolderGit2 },
+    { name: "About", to: "/admin/about", icon: ContactRound },
   ]
 
   useEffect(() => {
@@ -27,7 +28,7 @@ const Sidebar = () => {
         <span className='flex items-center justify-center gap-2 font-semibold'><BriefcaseBusiness /> Portfolio</span>
         <button className='hover:cursor-w-resize w-fit h-fit relative group'>
           <PanelLeft />
-          <span className='absolute top-1/2 -translate-y-1/2 -right-36 shrink-0 w-auto h-auto bg-black z-10 text-white p-[6px_20px] rounded-full opacity-0 group-hover:-right-40 group-hover:opacity-100 group-hover:pointer-events-none transition-all duration-300'>
+          <span className='absolute top-1/2 -translate-y-1/2 -right-36 shrink-0 w-auto h-auto bg-black z-10 text-white p-[6px_20px] rounded-full opacity-0 group-hover:-right-40 group-hover:opacity-100 pointer-events-none transition-all duration-300'>
             {reduceSidebar ? "Open Sidebar" : "Close Sidebar"}
             <div className='triangle-left absolute top-1/2 -translate-1/2 -left-2' />
           </span>
@@ -67,18 +68,18 @@ const Sidebar = () => {
           ))
         }
       </nav>
-      <div className='Bottom w-full h-[13%] border-t border-[#0000009b] relative flex items-center justify-start flex-col gap-1'>
+      <div className='Bottom w-full h-[13%] border-t border-[#0000009b] relative flex items-center justify-start flex-col gap-2'>
         {/* Admin Profile */}
         <div className='flex relative items-center justify-between w-[90%] mt-2'>
           <div className='relative w-[20%] h-auto'>
-            {admin?.about?.profile?.url ? <img src={admin?.about?.profile?.url} className='w-10 h-10 object-cover rounded-full'/> : <span className='w-10 h-10 flex items-center justify-center border rounded-full font-semibold text-lg'>{admin?.name?.charAt(0)}</span>}
+            {admin?.about?.profile?.url ? <img src={admin?.about?.profile?.url} className='w-10 h-10 object-cover rounded-full' /> : <span className='w-10 h-10 flex items-center justify-center border rounded-full font-semibold text-lg'>{admin?.name?.charAt(0)}</span>}
           </div>
           <div className='flex w-[80%] items-start justify-start flex-col h-full '>
             <p className='w-full text-left font-semibold'>{admin?.name}</p>
             <p className='w-full text-left text-xs'>{admin?.email}</p>
           </div>
         </div>
-        <button className='border w-[90%] bg-red-600 text-white py-1.5 border-none outline-none rounded-lg flex items-center justify-center gap-2'>Sign Out <LogOut color="#ffffff" size={18}/></button>
+        <button className='border w-[90%] bg-red-600 text-white py-1.5 border-none outline-none rounded-lg flex items-center justify-center gap-2'>Sign Out <LogOut color="#ffffff" size={18} /></button>
       </div>
     </div>
   )

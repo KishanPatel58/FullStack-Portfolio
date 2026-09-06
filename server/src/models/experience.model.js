@@ -29,6 +29,18 @@ const experienceSchema = new Schema({
     companyLocation: {
         type: String,
         required: true
+    },
+    user:{
+        type: Schema.Types.ObjectId,
+        ref: "Admin"
+    },
+    companyLogo: {
+        imageId: {
+            type: String
+        },
+        url: {
+            type: String
+        }
     }
 },{timestamps: true})
 

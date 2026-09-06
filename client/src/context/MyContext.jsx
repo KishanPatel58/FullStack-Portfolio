@@ -205,7 +205,7 @@ export const MyContextProvider = ({ children }) => {
                     ]
                 },
                 {
-                    title: "⚡ Parallel AI File Generation",
+                    title: "⚡Parallel AI File Generation",
                     description: [
                         {
                             desc: "After creating the project plan, the system generates multiple files simultaneously instead of generating every component one by one.",
