@@ -116,7 +116,6 @@ const Projects = () => {
   // =========================================================
   // CORE FEATURES (DEEP NESTED HANDLERS)
   // =========================================================
-  // 1. Add/Remove Entire Feature (Title + Descriptions)
   const handleAddFeature = () => {
     setFormData((prev) => ({
       ...prev,
@@ -142,7 +141,6 @@ const Projects = () => {
     });
   };
 
-  // 2. Add/Remove/Edit Description Paragraphs inside Feature
   const handleAddDescriptionBlock = (fIdx) => {
     setFormData((prev) => {
       const updated = [...prev.coreFeatures];
@@ -169,7 +167,6 @@ const Projects = () => {
     });
   };
 
-  // 3. Add/Remove/Edit Bullet Points inside Description Paragraph
   const handleAddPointToDesc = (fIdx, dIdx) => {
     setFormData((prev) => {
       const updated = [...prev.coreFeatures];
@@ -352,7 +349,6 @@ const Projects = () => {
     setError("");
   };
 
-  // Helper to sanitize features before sending to API
   const sanitizeCoreFeatures = (features) => {
     return features
       .filter((f) => f.title.trim() !== "")
@@ -520,7 +516,6 @@ const Projects = () => {
     }
   };
 
-  // Sub-component rendering the form fields for both Add and Update modals
   const renderProjectFormFields = () => (
     <>
       {/* NAME */}
@@ -655,9 +650,7 @@ const Projects = () => {
         )}
       </div>
 
-      {/* =========================================================
-          DEEP NESTED CORE FEATURES BUILDER
-      ========================================================== */}
+      {/* CORE FEATURES BUILDER */}
       <div className="mb-6 p-4 rounded-xl border border-black/15 bg-black/[0.01]">
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -683,7 +676,6 @@ const Projects = () => {
               key={fIdx}
               className="p-4 bg-white border border-black/20 rounded-xl space-y-4 shadow-2xs"
             >
-              {/* Feature Title Row */}
               <div className="flex items-center gap-2">
                 <input
                   type="text"
@@ -704,7 +696,6 @@ const Projects = () => {
                 )}
               </div>
 
-              {/* Descriptions Array (Multiple Paragraphs per Feature) */}
               <div className="space-y-3 pl-3 border-l-2 border-black/20">
                 <span className="text-[10.5px] uppercase font-bold tracking-wider text-black/40 block">
                   Paragraphs & Nested Points:
@@ -737,7 +728,6 @@ const Projects = () => {
                       )}
                     </div>
 
-                    {/* Sub-Bullet Points for this Paragraph */}
                     <div className="pl-3 space-y-1.5 border-l border-black/15">
                       {descObj.points?.map((pt, pIdx) => (
                         <div key={pIdx} className="flex items-center gap-1.5">
@@ -791,11 +781,11 @@ const Projects = () => {
     "px-3 2xl:px-5 py-3.5 text-[10.5px] 2xl:text-[11px] font-semibold uppercase tracking-[0.06em] text-black/50 select-none";
 
   return (
-    <div className="relative w-full min-h-screen flex flex-col bg-[#dadada] text-black antialiased">
+    <div className="relative w-full h-screen flex flex-col bg-[#dadada] text-black antialiased overflow-hidden">
       {/* =====================================================
-          TOP BAR
+          TOP BAR (Locked to h-16 to perfectly match Sidebar & Dashboard)
       ====================================================== */}
-      <div className="w-full min-h-[56px] py-3 border-b border-black/50 bg-[#dadada] flex items-center justify-between px-6 sm:px-8">
+      <div className="TopBar w-full h-16 border-b border-[#0000009b] bg-[#dadada] flex items-center justify-between px-6 sm:px-8 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-black text-white flex items-center justify-center shadow-xs">
             <FolderGit2 size={18} />
@@ -823,7 +813,7 @@ const Projects = () => {
             type="button"
             onClick={handleOpenAddForm}
             disabled={loading}
-            className="h-9 px-4 rounded-lg bg-black text-white text-sm font-medium flex items-center gap-2 hover:bg-zinc-800 transition-colors disabled:opacity-40 cursor-pointer"
+            className="h-9 px-4 rounded-lg bg-black text-white text-xs font-semibold flex items-center gap-2 hover:bg-zinc-800 transition-colors disabled:opacity-40 cursor-pointer shadow-xs"
           >
             <Plus size={16} />
             Add Project
@@ -834,7 +824,7 @@ const Projects = () => {
       {/* =====================================================
           MAIN CONTENT AREA
       ====================================================== */}
-      <div className="w-full p-4 sm:p-6 2xl:p-8">
+      <div className="w-full flex-1 overflow-y-auto p-4 sm:p-6 2xl:p-8">
         {error && (
           <div className="mb-5 flex items-center justify-between gap-4 px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/5 text-red-600 text-sm">
             <span>{error}</span>

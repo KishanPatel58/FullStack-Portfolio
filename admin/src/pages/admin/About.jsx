@@ -46,6 +46,7 @@ const About = () => {
     aboutDesc: "",
     address: "",
     mobileNo: "",
+    shortDescription: ""
   });
 
   // Hobbies & Socials Sub-states
@@ -54,7 +55,7 @@ const About = () => {
 
   // New item inputs
   const [newHobby, setNewHobby] = useState("");
-  
+
   // Dual-mode Social Profile inputs
   const [socialMode, setSocialMode] = useState("file"); // "file" | "url"
   const [socialFile, setSocialFile] = useState(null);
@@ -86,6 +87,7 @@ const About = () => {
       aboutDesc: adminData.about?.aboutDesc || "",
       address: adminData.about?.address || "",
       mobileNo: adminData.about?.mobileNo || "",
+      shortDescription: adminData.about?.shortDescription || ""
     });
 
     setProfileUrl(adminData.about?.profile?.url || "");
@@ -211,6 +213,7 @@ const About = () => {
           aboutDesc: basicInfo.aboutDesc,
           address: basicInfo.address,
           mobileNo: basicInfo.mobileNo,
+          shortDesc: basicInfo.shortDescription
         },
         { withCredentials: true }
       );
@@ -343,11 +346,11 @@ const About = () => {
   }
 
   return (
-    <div className="relative w-full min-h-screen flex flex-col bg-[#dadada] text-black antialiased">
+    <div className="relative w-full h-screen flex flex-col bg-[#dadada] text-black antialiased overflow-hidden">
       {/* =====================================================
-          TOP BAR
+          TOP BAR (Locked to h-16 to perfectly match Sidebar & Other Modules)
       ====================================================== */}
-      <div className="w-full min-h-[56px] py-3 border-b border-black/50 bg-[#dadada] flex items-center justify-between px-6 sm:px-8">
+      <div className="TopBar w-full h-16 border-b border-[#0000009b] bg-[#dadada] flex items-center justify-between px-6 sm:px-8 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-black text-white flex items-center justify-center shadow-xs">
             <User size={18} />
@@ -373,7 +376,7 @@ const About = () => {
       {/* =====================================================
           MAIN BODY
       ====================================================== */}
-      <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 2xl:p-8 space-y-6">
+      <div className="w-full flex-1 overflow-y-auto p-4 sm:p-6 2xl:p-8 space-y-6 max-w-6xl mx-auto">
         {/* TOP OVERVIEW CARD */}
         <div className="w-full bg-[#dadada] border border-black/25 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col md:flex-row items-center md:items-start gap-6">
           {/* PROFILE PHOTO WITH UPLOAD CONTROLS */}
@@ -621,6 +624,21 @@ const About = () => {
               className="w-full p-3 rounded-lg border border-black/20 bg-white text-xs outline-none focus:border-black resize-none leading-relaxed"
             />
           </div>
+          {/* BIO / SHORT Desc */}
+          <div>
+              <label className="block text-xs font-semibold mb-1.5">
+              Short About Description / Bio
+            </label>
+            <textarea
+              rows={4}
+              value={basicInfo.shortDescription}
+              onChange={(e) =>
+                setBasicInfo({ ...basicInfo, shortDescription: e.target.value })
+              }
+              placeholder="Tell your story, focus areas, tech interests (For Home Page)..."
+              className="w-full p-3 rounded-lg border border-black/20 bg-white text-xs outline-none focus:border-black resize-none leading-relaxed"
+            />
+          </div>
         </form>
 
         {/* =====================================================
@@ -845,27 +863,24 @@ const About = () => {
                 <label className="block text-xs font-semibold">
                   Platform Icon
                 </label>
-                {/* Mode Selector Toggle */}
                 <div className="flex items-center h-7 p-0.5 rounded-lg border border-black/20 bg-black/5">
                   <button
                     type="button"
                     onClick={() => setSocialMode("file")}
-                    className={`h-full px-2 rounded-md text-[10px] font-medium transition-colors cursor-pointer ${
-                      socialMode === "file"
+                    className={`h-full px-2 rounded-md text-[10px] font-medium transition-colors cursor-pointer ${socialMode === "file"
                         ? "bg-black text-white shadow-xs"
                         : "text-black/60 hover:text-black"
-                    }`}
+                      }`}
                   >
                     Upload Photo
                   </button>
                   <button
                     type="button"
                     onClick={() => setSocialMode("url")}
-                    className={`h-full px-2 rounded-md text-[10px] font-medium transition-colors cursor-pointer ${
-                      socialMode === "url"
+                    className={`h-full px-2 rounded-md text-[10px] font-medium transition-colors cursor-pointer ${socialMode === "url"
                         ? "bg-black text-white shadow-xs"
                         : "text-black/60 hover:text-black"
-                    }`}
+                      }`}
                   >
                     Direct URL
                   </button>
@@ -873,7 +888,6 @@ const About = () => {
               </div>
 
               {socialMode === "file" ? (
-                /* OPTION 1: FILE UPLOAD */
                 <label className="w-full h-12 px-3 rounded-lg border border-dashed border-black/30 bg-black/[0.02] flex items-center justify-between cursor-pointer hover:bg-black/[0.04] transition">
                   <div className="flex items-center gap-2 text-black/60 truncate">
                     <Upload size={14} className="shrink-0" />
@@ -892,7 +906,6 @@ const About = () => {
                   />
                 </label>
               ) : (
-                /* OPTION 2: DIRECT URL */
                 <div className="relative flex items-center">
                   <LinkIcon
                     size={13}

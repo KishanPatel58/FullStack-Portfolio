@@ -1,24 +1,47 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import GridCanvas from '../components/ui/GridCanvas'
 import { UseMyContext } from '../context/MyContext'
 import Experience from '../sections/Experience';
 import Skills from '../sections/Skills';
 import Education from '../sections/Education';
+import api from '../api/axios';
 
 const About = () => {
   const { Profile } = UseMyContext();
+  const [admin, setAdmin] = useState(null)
+  
 
+
+  // Fetch Owner Details.
+  const fetchProfileDetails = async () => {
+    try {
+      const { data } = await api.get("/api/portfolio/profile");
+      if (data.success) {
+        setAdmin(data.admin)
+      }
+    } catch (error) {
+      console.log("Failed to Fetch:", error)
+      return;
+    }
+  }
+
+  
+
+  useEffect(() => {
+    fetchProfileDetails();
+    
+  }, [])
   return (
     <div className='w-full h-full flex items-center justify-center flex-col'>
       <GridCanvas />
 
       {/* Profile Section - Vertical & Centered */}
       <div className='w-full flex flex-col items-center justify-center gap-6 mt-20 px-4'>
-        
+
         {/* Profile Image */}
         <motion.img
-          src={Profile.me.myImg}
+          src={admin?.about?.profile?.url}
           alt="My Image"
           className='
             w-[90%]
@@ -59,7 +82,7 @@ const About = () => {
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
         >
-          {Profile.me.about}
+          {admin?.about?.aboutDesc}
         </motion.p>
       </div>
 

@@ -2,8 +2,11 @@ import { FileCog, SendHorizontal } from "lucide-react";
 import { motion } from "framer-motion";
 import { UseMyContext } from "../context/MyContext";
 import Button from "../components/ui/Button";
+import { useEffect, useState } from "react";
+import api from "../api/axios";
 
 const Hero = () => {
+    const [admin, setAdmin] = useState(null)
     const { Profile } = UseMyContext();
 
     const badges = [
@@ -16,6 +19,23 @@ const Hero = () => {
     // Duplicate for seamless loop
     const carouselBadges = [...badges, ...badges];
 
+
+    // Fetch Owner Details.
+    const fetchProfileDetails = async () => {
+        try {
+            const {data} = await api.get("/api/portfolio/profile");
+            if(data.success){
+                setAdmin(data.admin)
+            }
+        } catch (error) {
+            console.log("Failed to Fetch:", error)
+            return;
+        }
+    }
+
+    useEffect(()=>{
+        fetchProfileDetails()
+    },[])
     return (
         <section className="relative h-auto flex items-center flex-col gap-4 sm:gap-7 overflow-hidden">
             <div className="flex flex-col justify-center items-center sm:gap-3">
@@ -39,7 +59,7 @@ const Hero = () => {
                     viewport={{ once: true }}
                     transition={{ duration: 0.55, delay: 0.15, ease: "easeOut" }}
                 >
-                    I'm {Profile.me.name}
+                    I'm {admin?.name}
                 </motion.h1>
             </div>
 
@@ -51,7 +71,7 @@ const Hero = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.55, delay: 0.3, ease: "easeOut" }}
             >
-                {Profile.me.description}
+                {admin?.about?.shortDescription}
             </motion.p>
 
             {/* Buttons */}

@@ -1,13 +1,30 @@
-import { BookMarked, BookOpen, BriefcaseBusiness, ContactRound, FolderGit2, GraduationCap, LayoutDashboard, LogOut, PanelLeft } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom';
-import { UseAdmin } from '../context/AdminContext';
+import {
+  BellDot,
+  BookMarked,
+  BookOpen,
+  BriefcaseBusiness,
+  ContactRound,
+  FileUser,
+  FolderGit2,
+  GraduationCap,
+  LayoutDashboard,
+  LogOut,
+  PanelLeft,
+  X,
+} from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { UseAdmin } from "../context/AdminContext";
 
-const Sidebar = () => {
-  const { admin } = UseAdmin()
-  const [reduceSidebar, setReduceSidebar] = useState(false);
-  const location = useLocation()
-  const [activeLink, setActiveLink] = useState(null)
+const Sidebar = ({
+  reduceSidebar,
+  setReduceSidebar,
+  mobileOpen,
+  setMobileOpen,
+}) => {
+  const { admin } = UseAdmin();
+  const location = useLocation();
+  const [activeLink, setActiveLink] = useState("");
 
   const navLinks = [
     { name: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
@@ -16,73 +33,190 @@ const Sidebar = () => {
     { name: "Experience", to: "/admin/experience", icon: BookMarked },
     { name: "Projects", to: "/admin/projects", icon: FolderGit2 },
     { name: "About", to: "/admin/about", icon: ContactRound },
-  ]
+    { name: "Resume", to: "/admin/resume", icon: FileUser },
+    { name: "Notifications", to: "/admin/notifications", icon: BellDot },
+  ];
 
   useEffect(() => {
-    setActiveLink(location.pathname.split("/")[2])
-  }, [])
+    const currentTab = location.pathname.split("/")[2] || "dashboard";
+    setActiveLink(currentTab.toLowerCase());
+  }, [location.pathname]);
+
+  const handleNavClick = (linkName) => {
+    setActiveLink(linkName.toLowerCase());
+    if (setMobileOpen) setMobileOpen(false); // Auto-close drawer on mobile route click
+  };
 
   return (
-    <div className="w-[20%] h-screen sticky top-0 left-0 z-20 bg-[#dadada] border-r border-[#0000009b]">
-      <div className='Top w-full h-[8%] border-b border-[#0000009b] flex items-center justify-between px-[28px]'>
-        <span className='flex items-center justify-center gap-2 font-semibold'><BriefcaseBusiness /> Portfolio</span>
-        <button className='hover:cursor-w-resize w-fit h-fit relative group'>
-          <PanelLeft />
-          <span className='absolute top-1/2 -translate-y-1/2 -right-36 shrink-0 w-auto h-auto bg-black z-10 text-white p-[6px_20px] rounded-full opacity-0 group-hover:-right-40 group-hover:opacity-100 pointer-events-none transition-all duration-300'>
-            {reduceSidebar ? "Open Sidebar" : "Close Sidebar"}
-            <div className='triangle-left absolute top-1/2 -translate-1/2 -left-2' />
+    <aside
+      className={`
+        h-screen bg-[#dadada] border-r border-[#0000009b] flex flex-col justify-between shrink-0
+        transition-all duration-300 ease-in-out
+        fixed top-0 left-0 z-50
+        ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+        md:translate-x-0 md:sticky
+        ${reduceSidebar ? "md:w-[72px]" : "md:w-[20%] md:min-w-[230px]"}
+        w-72 max-w-[85vw]
+      `}
+    >
+      {/* =====================================================
+          TOP HEADER (Locked to h-16)
+      ====================================================== */}
+      <div
+        className={`w-full h-16 border-b border-[#0000009b] flex items-center transition-all duration-300 shrink-0 ${reduceSidebar ? "md:justify-center px-4" : "justify-between px-6"
+          }`}
+      >
+        {/* Brand Name / Logo */}
+        <div className="flex items-center gap-2 font-semibold text-lg truncate">
+          <BriefcaseBusiness size={22} className="shrink-0" />
+          <span className={reduceSidebar ? "md:hidden" : "block"}>
+            Portfolio
           </span>
+        </div>
+
+        {/* Mobile Close Button (Screen < md) */}
+        <button
+          type="button"
+          onClick={() => setMobileOpen(false)}
+          className="p-1.5 rounded-lg border border-black/20 hover:bg-black hover:text-white md:hidden transition-colors cursor-pointer"
+          title="Close Sidebar"
+        >
+          <X size={18} />
         </button>
+
+        {/* Desktop Collapse Toggle (Screen >= md) */}
+        {!reduceSidebar ? (
+          <button
+            type="button"
+            onClick={() => setReduceSidebar(true)}
+            className="hidden md:flex p-1.5 rounded-md hover:bg-black/10 transition-colors cursor-pointer relative group shrink-0"
+            title="Collapse sidebar"
+          >
+            <PanelLeft size={20} />
+            <span className="absolute top-1/2 -translate-y-1/2 left-full ml-3 px-2.5 py-1 text-xs text-white bg-black rounded-md whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-30 shadow-md">
+              Close Sidebar
+            </span>
+          </button>
+        ) : (
+          <div className="hidden md:flex relative group w-full items-center justify-center">
+            <button
+              type="button"
+              onClick={() => setReduceSidebar(false)}
+              className="relative flex items-center justify-center w-10 h-10 rounded-lg hover:bg-black/10 transition-colors cursor-pointer"
+            >
+              <span className="group-hover:hidden transition-all text-black">
+                <BriefcaseBusiness size={22} />
+              </span>
+              <span className="hidden group-hover:block transition-all text-black">
+                <PanelLeft size={22} />
+              </span>
+            </button>
+            <span className="absolute top-1/2 -translate-y-1/2 left-full ml-3 px-2.5 py-1 text-xs text-white bg-black rounded-md whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-30 shadow-md">
+              Open Sidebar
+            </span>
+          </div>
+        )}
       </div>
-      <nav className='Middle w-full h-[79%] relative flex flex-col p-3 gap-2'>
-        {
-          navLinks.map((link, idx) => (
+
+      {/* =====================================================
+          MIDDLE NAVIGATION
+      ====================================================== */}
+      <nav className="w-full flex-1 overflow-y-auto overflow-x-hidden p-3 flex flex-col gap-1.5">
+        {navLinks.map((link, idx) => {
+          const isActive = activeLink === link.name.toLowerCase();
+          const Icon = link.icon;
+
+          return (
             <Link
-              onClick={() => setActiveLink(link.name.toLowerCase())}
               key={idx}
               to={link.to}
-              className={`overflow-hidden flex relative items-center rounded-lg justify-start text-lg font-semibold gap-2 w-full p-[7px_15px] ${activeLink === link.name.toLowerCase()
-                ? "bg-[#dadada]"
-                : ""}transition-all duration-300`}
+              onClick={() => handleNavClick(link.name)}
+              className={`relative flex items-center rounded-lg text-sm font-semibold transition-all duration-200 group ${reduceSidebar
+                  ? "md:justify-center p-2.5 px-3"
+                  : "justify-start px-3.5 py-2.5 gap-3"
+                } ${isActive
+                  ? "bg-black/10 text-black"
+                  : "text-black/70 hover:bg-black/5 hover:text-black"
+                }`}
             >
-              <link.icon />
+              <Icon size={20} className="shrink-0" />
 
-              {link.name}
+              <span className={`truncate ${reduceSidebar ? "md:hidden" : "block"}`}>
+                {link.name}
+              </span>
 
-              {/* Right white active indicator */}
+              {/* Desktop Collapsed Tooltip */}
+              {reduceSidebar && (
+                <span className="hidden md:block absolute left-full ml-3 px-2.5 py-1 text-xs text-white bg-black rounded-md whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-30 shadow-md">
+                  {link.name}
+                </span>
+              )}
+
+              {/* Vertical Active Indicator */}
               <span
-                className={`h-full w-2 bg-black ${activeLink === link.name.toLowerCase()
-                  ? "block absolute top-0 right-0"
-                  : "hidden"
+                className={`absolute top-0 right-0 h-full w-1.5 bg-black rounded-l transition-opacity ${isActive ? "opacity-100" : "opacity-0"
                   }`}
               />
 
-              {/* Light effect: RIGHT → LEFT */}
+              {/* Hover Glow */}
               <span
-                className={`pointer-events-none absolute inset-y-0 right-0 w-full bg-gradient-to-l from-black/30 via-black/15 to-transparent transition-all duration-500 ease-out ${activeLink === link.name.toLowerCase()
-                  ? "scale-x-100 opacity-100 origin-right"
-                  : "scale-x-0 opacity-0 origin-right"
+                className={`pointer-events-none absolute inset-y-0 right-0 w-full bg-gradient-to-l from-black/20 via-black/10 to-transparent transition-transform duration-300 ease-out origin-right ${isActive ? "scale-x-100 opacity-100" : "scale-x-0 opacity-0"
                   }`}
               />
             </Link>
-          ))
-        }
+          );
+        })}
       </nav>
-      <div className='Bottom w-full h-[13%] border-t border-[#0000009b] relative flex items-center justify-start flex-col gap-2'>
-        {/* Admin Profile */}
-        <div className='flex relative items-center justify-between w-[90%] mt-2'>
-          <div className='relative w-[20%] h-auto'>
-            {admin?.about?.profile?.url ? <img src={admin?.about?.profile?.url} className='w-10 h-10 object-cover rounded-full' /> : <span className='w-10 h-10 flex items-center justify-center border rounded-full font-semibold text-lg'>{admin?.name?.charAt(0)}</span>}
+
+      {/* =====================================================
+          BOTTOM PROFILE & ACTIONS
+      ====================================================== */}
+      <div className="w-full border-t border-[#0000009b] p-3 flex flex-col items-center gap-2.5 shrink-0">
+        <div
+          className={`w-full flex items-center ${reduceSidebar ? "md:justify-center" : "justify-start gap-3"
+            }`}
+        >
+          <div className="relative shrink-0">
+            {admin?.about?.profile?.url ? (
+              <img
+                src={admin.about.profile.url}
+                alt="Admin Profile"
+                className="w-9 h-9 object-cover rounded-full border border-black/30"
+              />
+            ) : (
+              <span className="w-9 h-9 flex items-center justify-center border border-black/30 bg-white rounded-full font-bold text-sm">
+                {(admin?.name || "A").charAt(0).toUpperCase()}
+              </span>
+            )}
           </div>
-          <div className='flex w-[80%] items-start justify-start flex-col h-full '>
-            <p className='w-full text-left font-semibold'>{admin?.name}</p>
-            <p className='w-full text-left text-xs'>{admin?.email}</p>
+
+          <div
+            className={`min-w-0 flex-1 ${reduceSidebar ? "md:hidden" : "block"
+              }`}
+          >
+            <p className="font-semibold text-xs text-black truncate leading-tight">
+              {admin?.name || "Admin"}
+            </p>
+            <p className="text-[11px] text-black/50 truncate leading-tight mt-0.5">
+              {admin?.email}
+            </p>
           </div>
         </div>
-        <button className='border w-[90%] bg-red-600 text-white py-1.5 border-none outline-none rounded-lg flex items-center justify-center gap-2'>Sign Out <LogOut color="#ffffff" size={18} /></button>
-      </div>
-    </div>
-  )
-}
 
-export default Sidebar
+        <button
+          type="button"
+          title={reduceSidebar ? "Sign Out" : undefined}
+          className={`border-none outline-none rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition-colors flex items-center justify-center cursor-pointer shadow-xs ${reduceSidebar ? "md:w-9 md:h-9 md:p-0 w-full py-2 px-3 gap-2 text-xs" : "w-full py-2 px-3 gap-2 text-xs"
+            }`}
+        >
+          <span className={reduceSidebar ? "md:hidden" : "block"}>
+            Sign Out
+          </span>
+          <LogOut size={16} />
+        </button>
+      </div>
+    </aside>
+  );
+};
+
+export default Sidebar;

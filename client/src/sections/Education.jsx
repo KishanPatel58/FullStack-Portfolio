@@ -1,121 +1,256 @@
-import React from 'react'
-import { motion } from 'framer-motion'
-import { UseMyContext } from '../context/MyContext'
+import React, { useState, useEffect } from "react";
+import { Calendar, MapPin, Award } from "lucide-react";
+import api from "../api/axios";
 
 const Education = () => {
-    const { Education } = UseMyContext()
+  const [educations, setEducations] = useState(null);
 
-    return (
-        <div className='px-5 h-auto flex flex-col items-start justify-start w-[90%] gap-2 mt-65'>
-            <h1 className='w-full text-start text-3xl mt-6 -ml-4'>
-                Education<span className='animate-pulse'>_</span>
-            </h1>
+  useEffect(() => {
+    let isMounted = true;
 
-            <div className='w-auto sm:w-full h-fit flex items-center justify-center relative'>
-                <div className='Vertical-Stick h-full w-[2px] bg-black flex flex-col items-center justify-center relative z-40 gap-35 sm:gap-40 my-6'>
-                    {Education.map((edu, idx) => (
-                        <div key={idx} className={`w-[20px] h-[20px] rounded-full relative bg-black`}>
-                            
-                            {/* Main Education Card */}
-                            <motion.div
-                                initial={{
-                                    opacity: 0,
-                                    x: idx % 2 === 0 ? -80 : 80
-                                }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true, amount: 0.3 }}
-                                transition={{
-                                    duration: 0.6,
-                                    delay: idx * 0.15,
-                                    ease: "easeOut"
-                                }}
-                                className={`relative w-[76vw] sm:w-[36vh] h-fit border bg-[#dadada] px-1 rounded-lg ${
-                                    idx % 2 === 0
-                                        ? "-top-3 left-[calc(100%+15px)] md:w-[47vh]"
-                                        : "-top-3 -right-[calc(100%+15px)] sm:right-[calc(100%+16.5em)] md:!right-[calc(100%+21.8em)] md:!w-[47vh]"
-                                }`}
-                            >
-                                {/* Tooltip Triangle */}
-                                <div
-                                    className={`${
-                                        idx % 2 === 0
-                                            ? "arrow-left absolute top-3 -left-[11px]"
-                                            : "arrow-left absolute -left-[11px] top-3 sm:rotate-[180deg] sm:left-[calc(100%+2px)]"
-                                    }`}
-                                />
+    const fetchEducations = async () => {
+      try {
+        const res = await api.get("/api/portfolio/education");
+        const data = res?.data;
 
-                                <h1 className='flex items-center border mt-1 justify-between px-1 rounded-lg'>
-                                    <div className='flex items-center justify-center gap-1'>
-                                        <span className='text-xs'>{edu.year}</span>
-                                        {edu.active ? <span>-</span> : ""}
-                                        {edu.active ? (
-                                            <span className='border p-[0.8px_10px] rounded-lg text-xs flex items-center justify-center gap-2'>
-                                                <div className='w-[7px] h-[7px] rounded-full bg-green-500 animate-ping' /> Active
-                                            </span>
-                                        ) : (
-                                            ""
-                                        )}
-                                    </div>
-                                    <div className='flex items-center justify-center gap-1'>
-                                        <span className='text-xs'>{edu.std} -</span>
-                                        <span className='text-xs !underline'>{edu.grade}</span>
-                                    </div>
-                                </h1>
+        const rawList =
+          data?.educations ||
+          data?.education ||
+          data?.data ||
+          (Array.isArray(data) ? data : null);
 
-                                <h1>@{edu.schoolOrCollege}_</h1>
-                                <p className='text-justify text-sm mb-2'>{edu.description}</p>
-                            </motion.div>
+        if (isMounted && Array.isArray(rawList)) {
+          const validRecords = rawList.filter((edu) => {
+            if (!edu || typeof edu !== "object") return false;
+            const name =
+              edu.instituteName || edu.schoolOrCollege || edu.institute || "";
+            const study =
+              edu.study || edu.std || edu.degree || edu.course || "";
+            return Boolean(String(name).trim() || String(study).trim());
+          });
 
-                            {/* Logo Card */}
-                            <motion.div
-                                initial={{
-                                    opacity: 0,
-                                    x: idx % 2 === 0 ? -80 : 80
-                                }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true, amount: 0.3 }}
-                                transition={{
-                                    duration: 0.6,
-                                    delay: idx * 0.15 + 0.1,
-                                    ease: "easeOut"
-                                }}
-                                className={`hidden sm:flex absolute w-auto items-start justify-end sm:w-[40vh] bg-[#dadada] rounded-lg -top-3 ${
-                                    idx % 2 === 0
-                                        ? "-left-[calc(100%+18.5em)]"
-                                        : "left-[calc(100%+15px)]"
-                                }`}
-                            >
-                                {/* Tooltip Triangle */}
-                                <div
-                                    className={`absolute top-3 ${
-                                        idx % 2 === 0 ? "arrow-right -right-[11px]" : "arrow-left -left-[11px]"
-                                    }`}
-                                />
+          setEducations(validRecords);
+        } else if (isMounted) {
+          setEducations([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch education records:", err);
+        if (isMounted) setEducations([]);
+      }
+    };
 
-                                {edu.logo ? (
-                                    <img
-                                        src={edu.logo}
-                                        alt={edu.schoolOrCollege}
-                                        className={`w-12 h-12 rounded-full absolute -top-1 ${
-                                            idx % 2 === 0 ? "right-0" : "left-0"
-                                        }`}
-                                    />
-                                ) : (
-                                    <span
-                                        className={`w-12 h-12 border rounded-full flex items-center justify-center absolute -top-1 ${
-                                            idx % 2 === 0 ? "right-0" : "left-0"
-                                        }`}
-                                    >
-                                        {edu.schoolOrCollege.charAt(0)}
-                                    </span>
-                                )}
-                            </motion.div>
-                        </div>
-                    ))}
+    fetchEducations();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  if (!educations || educations.length === 0) {
+    return null;
+  }
+
+  const formatPassedYear = (edu) => {
+    if (edu?.currentlyStudying || edu?.active || !edu?.passedYear) {
+      return "Present";
+    }
+    const d = new Date(edu.passedYear);
+    if (!Number.isNaN(d.getTime())) {
+      return d.getFullYear();
+    }
+    return edu.passedYear || edu.year || "—";
+  };
+
+  return (
+    <div className="relative flex flex-col justify-start items-start w-[90%] max-w-5xl mx-auto pb-16 antialiased">
+      <h1 className="w-full text-start text-3xl mt-6 font-bold">
+        Education<span className="animate-pulse">_</span>
+      </h1>
+
+      <div className="relative w-full mt-10">
+        {/* Center Line on desktop (md:left-1/2), Left Line on mobile (left-4) */}
+        <div className="absolute top-4 bottom-4 left-4 md:left-1/2 -translate-x-1/2 w-[2px] bg-black/70" />
+
+        <div className="flex flex-col gap-10 sm:gap-14 w-full">
+          {educations.map((edu, idx) => {
+            const isEven = idx % 2 === 0;
+            const institute =
+              edu.instituteName ||
+              edu.schoolOrCollege ||
+              edu.institute ||
+              "Institute";
+            const study =
+              edu.study || edu.std || edu.degree || edu.course || "Study";
+            const logo = edu.instituteLogo?.url || edu.logo;
+            const isCurrent = Boolean(edu.currentlyStudying ?? edu.active);
+            const address = edu.address || edu.location;
+            const grade =
+              edu.grade?.value !== undefined
+                ? `${edu.grade.value}${
+                    edu.grade?.title?.toLowerCase() === "percentage" ? "%" : ""
+                  } (${edu.grade?.title?.toUpperCase() || ""})`
+                : edu.grade;
+
+            return (
+              <div
+                key={edu._id || idx}
+                className="relative flex items-center md:justify-between w-full"
+              >
+                {/* Timeline Dot */}
+                <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-black border-2 border-[#dadada] z-20 shadow-xs" />
+
+                {/* Left Desktop Slot (>= md only) */}
+                <div className="hidden md:flex w-[46%] justify-end">
+                  {isEven ? (
+                    <div className="w-full">
+                      <EducationCard
+                        institute={institute}
+                        study={study}
+                        logo={logo}
+                        passedYear={formatPassedYear(edu)}
+                        isCurrent={isCurrent}
+                        grade={grade}
+                        address={address}
+                        description={edu.description || edu.desc}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-end justify-center pr-6 text-right">
+                      <span className="text-sm font-bold text-black">
+                        {institute}
+                      </span>
+                      <span className="text-xs text-black/60 font-medium">
+                        {study} • {formatPassedYear(edu)}
+                      </span>
+                    </div>
+                  )}
                 </div>
-            </div>
-        </div>
-    )
-}
 
-export default Education
+                {/* Right Desktop Slot (>= md) AND Full Mobile Slot (< md) */}
+                <div className="w-full pl-10 md:pl-0 md:w-[46%] flex justify-start">
+                  {/* On Mobile (< md): Always show the full EducationCard */}
+                  <div className="block md:hidden w-full">
+                    <EducationCard
+                      institute={institute}
+                      study={study}
+                      logo={logo}
+                      passedYear={formatPassedYear(edu)}
+                      isCurrent={isCurrent}
+                      grade={grade}
+                      address={address}
+                      description={edu.description || edu.desc}
+                    />
+                  </div>
+
+                  {/* On Desktop (>= md): Alternate between Card and Meta-text */}
+                  <div className="hidden md:block w-full">
+                    {!isEven ? (
+                      <EducationCard
+                        institute={institute}
+                        study={study}
+                        logo={logo}
+                        passedYear={formatPassedYear(edu)}
+                        isCurrent={isCurrent}
+                        grade={grade}
+                        address={address}
+                        description={edu.description || edu.desc}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-start justify-center pl-6 text-left">
+                        <span className="text-sm font-bold text-black">
+                          {institute}
+                        </span>
+                        <span className="text-xs text-black/60 font-medium">
+                          {study} • {formatPassedYear(edu)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const EducationCard = ({
+  institute,
+  study,
+  logo,
+  passedYear,
+  isCurrent,
+  grade,
+  address,
+  description,
+}) => {
+  return (
+    <div className="w-full bg-[#dadada] border border-black/30 rounded-xl p-4 shadow-xs hover:border-black transition-colors">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-lg border border-black/30 bg-white overflow-hidden flex items-center justify-center shrink-0">
+            {logo ? (
+              <img
+                src={logo}
+                alt={institute}
+                className="w-full h-full object-contain p-1"
+              />
+            ) : (
+              <span className="font-bold text-sm text-black/70">
+                {institute?.charAt(0)?.toUpperCase() || "E"}
+              </span>
+            )}
+          </div>
+          <div className="min-w-0">
+            <h3 className="font-bold text-sm text-black truncate leading-tight">
+              {study}
+            </h3>
+            <p className="text-xs text-black/60 font-semibold truncate mt-0.5">
+              @{institute}
+            </p>
+          </div>
+        </div>
+
+        {isCurrent ? (
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-black text-white px-2 py-0.5 rounded-full shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Current
+          </span>
+        ) : (
+          <span className="text-[10px] font-medium border border-black/20 bg-white/50 text-black/70 px-2 py-0.5 rounded-full shrink-0">
+            Completed
+          </span>
+        )}
+      </div>
+
+      <div className="mt-3 flex items-center gap-3 flex-wrap text-[11px] text-black/60 border-t border-black/10 pt-2">
+        <span className="inline-flex items-center gap-1 font-medium">
+          <Calendar size={12} className="text-black/50" />
+          {passedYear}
+        </span>
+        {grade && (
+          <span className="inline-flex items-center gap-1 font-medium">
+            <Award size={12} className="text-black/50" />
+            {grade}
+          </span>
+        )}
+        {address && (
+          <span className="inline-flex items-center gap-1 font-medium">
+            <MapPin size={12} className="text-black/50" />
+            {address}
+          </span>
+        )}
+      </div>
+
+      {description && (
+        <p className="mt-2.5 pt-2 border-t border-black/10 text-xs text-black/80 leading-relaxed text-justify">
+          {description}
+        </p>
+      )}
+    </div>
+  );
+};
+
+export default Education;

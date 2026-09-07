@@ -77,34 +77,17 @@ const Skills = () => {
     if (!isEditMode) return true;
 
     const originalName = (editingSkill?.name || "").trim();
-
-    const originalLevel =
-      editingSkill?.levelOfKnowledge || "";
-
+    const originalLevel = editingSkill?.levelOfKnowledge || "";
     const originalCategory = String(
-      editingSkill?.category?._id ||
-        editingSkill?.category ||
-        ""
+      editingSkill?.category?._id || editingSkill?.category || ""
     );
 
-    const nameChanged =
-      skillName.trim() !== originalName;
+    const nameChanged = skillName.trim() !== originalName;
+    const levelChanged = levelOfKnowledge !== originalLevel;
+    const categoryChanged = String(category) !== originalCategory;
+    const imageChanged = skillImage !== null;
 
-    const levelChanged =
-      levelOfKnowledge !== originalLevel;
-
-    const categoryChanged =
-      String(category) !== originalCategory;
-
-    const imageChanged =
-      skillImage !== null;
-
-    return (
-      nameChanged ||
-      levelChanged ||
-      categoryChanged ||
-      imageChanged
-    );
+    return nameChanged || levelChanged || categoryChanged || imageChanged;
   }, [
     isEditMode,
     editingSkill,
@@ -129,10 +112,7 @@ const Skills = () => {
   // =========================================================
 
   const resetSkillForm = () => {
-    if (
-      skillImage &&
-      skillImagePreview?.startsWith("blob:")
-    ) {
+    if (skillImage && skillImagePreview?.startsWith("blob:")) {
       URL.revokeObjectURL(skillImagePreview);
     }
 
@@ -143,9 +123,7 @@ const Skills = () => {
     setSkillImagePreview("");
     setEditingSkill(null);
 
-    const input =
-      document.getElementById("SkillImg");
-
+    const input = document.getElementById("SkillImg");
     if (input) {
       input.value = "";
     }
@@ -165,40 +143,25 @@ const Skills = () => {
   // =========================================================
 
   const openEditSkillForm = (skill) => {
-    if (
-      skillImage &&
-      skillImagePreview?.startsWith("blob:")
-    ) {
+    if (skillImage && skillImagePreview?.startsWith("blob:")) {
       URL.revokeObjectURL(skillImagePreview);
     }
 
     setEditingSkill(skill);
-
     setSkillName(skill.name || "");
-
-    setLevelOfKnowledge(
-      skill.levelOfKnowledge || ""
-    );
-
+    setLevelOfKnowledge(skill.levelOfKnowledge || "");
     setCategory(
       skill.category?._id
         ? String(skill.category._id)
         : skill.category
-          ? String(skill.category)
-          : ""
+        ? String(skill.category)
+        : ""
     );
-
     setSkillImage(null);
-
-    setSkillImagePreview(
-      skill.technology?.url || ""
-    );
-
+    setSkillImagePreview(skill.technology?.url || "");
     setSkillFormShow(true);
 
-    const input =
-      document.getElementById("SkillImg");
-
+    const input = document.getElementById("SkillImg");
     if (input) {
       input.value = "";
     }
@@ -219,20 +182,15 @@ const Skills = () => {
 
   const fetchCategories = async () => {
     try {
-      const { data } = await api.get(
-        "/api/admin/categories",
-        {
-          withCredentials: true,
-        }
-      );
+      const { data } = await api.get("/api/admin/categories", {
+        withCredentials: true,
+      });
 
       if (data.success) {
         setCategories(data.categories || []);
       }
     } catch (error) {
-      console.log(
-        `Error to Fetch Categories: ${error}`
-      );
+      console.log(`Error to Fetch Categories: ${error}`);
     }
   };
 
@@ -249,10 +207,7 @@ const Skills = () => {
     }
 
     setCategoryLoading(true);
-
-    const toasts = toast.loading(
-      "Adding Category..."
-    );
+    const toasts = toast.loading("Adding Category...");
 
     try {
       const { data } = await api.post(
@@ -266,18 +221,10 @@ const Skills = () => {
       );
 
       if (data.success) {
-        setCategories((prev) => [
-          ...prev,
-          data.category,
-        ]);
-
+        setCategories((prev) => [...prev, data.category]);
         setCategoryName("");
-
         setCategoryAddFormShow(false);
-
-        toast.success(
-          data.message || "Category added."
-        );
+        toast.success(data.message || "Category added.");
       }
     } catch (error) {
       toast.error(
@@ -305,25 +252,15 @@ const Skills = () => {
     }
 
     setCategoryDeleteLoading(true);
-
-    const toasts = toast.loading(
-      "Deleting Category..."
-    );
+    const toasts = toast.loading("Deleting Category...");
 
     try {
-      await api.delete(
-        `/api/admin/categories/${id}/delete`,
-        {
-          withCredentials: true,
-        }
-      );
+      await api.delete(`/api/admin/categories/${id}/delete`, {
+        withCredentials: true,
+      });
 
       toast.success("Category deleted.");
-
-      setCategories((prev) =>
-        prev.filter((c) => c._id !== id)
-      );
-
+      setCategories((prev) => prev.filter((c) => c._id !== id));
       fetchSkills();
     } catch (error) {
       toast.error(
@@ -343,20 +280,15 @@ const Skills = () => {
 
   const fetchSkills = async () => {
     try {
-      const { data } = await api.get(
-        "/api/admin/skills",
-        {
-          withCredentials: true,
-        }
-      );
+      const { data } = await api.get("/api/admin/skills", {
+        withCredentials: true,
+      });
 
       if (data.success) {
         setSkillsList(data.skills || []);
       }
     } catch (error) {
-      console.log(
-        `Failed to Get Skills: ${error}`
-      );
+      console.log(`Failed to Get Skills: ${error}`);
     }
   };
 
@@ -370,43 +302,21 @@ const Skills = () => {
     if (!canSubmitSkill) return;
 
     setSkillLoading(true);
-
     const toasts = toast.loading(
-      isEditMode
-        ? "Updating Skill..."
-        : "Adding Skill..."
+      isEditMode ? "Updating Skill..." : "Adding Skill..."
     );
 
     try {
       const formData = new FormData();
-
-      formData.append(
-        "name",
-        skillName.trim()
-      );
-
-      formData.append(
-        "levelOfKnowledge",
-        levelOfKnowledge
-      );
-
-      formData.append(
-        "category",
-        category
-      );
+      formData.append("name", skillName.trim());
+      formData.append("levelOfKnowledge", levelOfKnowledge);
+      formData.append("category", category);
 
       if (skillImage) {
-        formData.append(
-          "skill",
-          skillImage
-        );
+        formData.append("skill", skillImage);
       }
 
       let data;
-
-      // =====================================================
-      // UPDATE
-      // =====================================================
 
       if (isEditMode) {
         const res = await api.put(
@@ -414,8 +324,7 @@ const Skills = () => {
           formData,
           {
             headers: {
-              "Content-Type":
-                "multipart/form-data",
+              "Content-Type": "multipart/form-data",
             },
             withCredentials: true,
           }
@@ -425,64 +334,31 @@ const Skills = () => {
 
         if (data.success) {
           setSkillsList((prev) =>
-            prev.map((s) =>
-              s._id === editingSkill._id
-                ? data.skill
-                : s
-            )
+            prev.map((s) => (s._id === editingSkill._id ? data.skill : s))
           );
-
-          toast.success(
-            data.message ||
-              "Skill updated."
-          );
+          toast.success(data.message || "Skill updated.");
         }
-      }
-
-      // =====================================================
-      // ADD
-      // =====================================================
-
-      else {
-        const res = await api.post(
-          "/api/admin/skills/add",
-          formData,
-          {
-            headers: {
-              "Content-Type":
-                "multipart/form-data",
-            },
-            withCredentials: true,
-          }
-        );
+      } else {
+        const res = await api.post("/api/admin/skills/add", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          withCredentials: true,
+        });
 
         data = res.data;
 
         if (data.success) {
-          setSkillsList((prev) => [
-            ...prev,
-            data.skill,
-          ]);
-
-          toast.success(
-            data.message ||
-              "Skill added."
-          );
+          setSkillsList((prev) => [...prev, data.skill]);
+          toast.success(data.message || "Skill added.");
         }
       }
-
-      // =====================================================
-      // CLOSE FORM
-      // =====================================================
 
       if (data?.success) {
         closeSkillForm();
       }
     } catch (error) {
-      console.log(
-        `Failed to save skill: ${error}`
-      );
-
+      console.log(`Failed to save skill: ${error}`);
       toast.error(
         error?.response?.data?.message ||
           error?.message ||
@@ -499,39 +375,21 @@ const Skills = () => {
   // =========================================================
 
   const deleteSkill = async (id) => {
-    if (
-      !window.confirm(
-        "Do you want to delete this skill?"
-      )
-    ) {
+    if (!window.confirm("Do you want to delete this skill?")) {
       return;
     }
 
     setSkillDeleteLoading(true);
-
-    const toasts = toast.loading(
-      "Deleting Skill..."
-    );
+    const toasts = toast.loading("Deleting Skill...");
 
     try {
-      const { data } = await api.delete(
-        `/api/admin/skills/${id}/delete`,
-        {
-          withCredentials: true,
-        }
-      );
+      const { data } = await api.delete(`/api/admin/skills/${id}/delete`, {
+        withCredentials: true,
+      });
 
       if (data.success) {
-        setSkillsList((prev) =>
-          prev.filter(
-            (s) => s._id !== id
-          )
-        );
-
-        toast.success(
-          data.message ||
-            "Skill deleted."
-        );
+        setSkillsList((prev) => prev.filter((s) => s._id !== id));
+        toast.success(data.message || "Skill deleted.");
       }
     } catch (error) {
       toast.error(
@@ -550,42 +408,24 @@ const Skills = () => {
   // =========================================================
 
   const handleSkillImageChange = (e) => {
-    const file =
-      e.target.files?.[0] || null;
+    const file = e.target.files?.[0] || null;
 
-    if (
-      skillImage &&
-      skillImagePreview?.startsWith("blob:")
-    ) {
-      URL.revokeObjectURL(
-        skillImagePreview
-      );
+    if (skillImage && skillImagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(skillImagePreview);
     }
 
     if (!file) {
       setSkillImage(null);
-
-      // Keep existing server preview
-      // in edit mode
-      if (
-        isEditMode &&
-        editingSkill?.technology?.url
-      ) {
-        setSkillImagePreview(
-          editingSkill.technology.url
-        );
+      if (isEditMode && editingSkill?.technology?.url) {
+        setSkillImagePreview(editingSkill.technology.url);
       } else {
         setSkillImagePreview("");
       }
-
       return;
     }
 
     setSkillImage(file);
-
-    setSkillImagePreview(
-      URL.createObjectURL(file)
-    );
+    setSkillImagePreview(URL.createObjectURL(file));
   };
 
   // =========================================================
@@ -593,32 +433,18 @@ const Skills = () => {
   // =========================================================
 
   const removeSkillImage = () => {
-    if (
-      skillImage &&
-      skillImagePreview?.startsWith("blob:")
-    ) {
-      URL.revokeObjectURL(
-        skillImagePreview
-      );
+    if (skillImage && skillImagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(skillImagePreview);
     }
 
     setSkillImage(null);
-
-    // Restore original image in edit mode
-    if (
-      isEditMode &&
-      editingSkill?.technology?.url
-    ) {
-      setSkillImagePreview(
-        editingSkill.technology.url
-      );
+    if (isEditMode && editingSkill?.technology?.url) {
+      setSkillImagePreview(editingSkill.technology.url);
     } else {
       setSkillImagePreview("");
     }
 
-    const input =
-      document.getElementById("SkillImg");
-
+    const input = document.getElementById("SkillImg");
     if (input) {
       input.value = "";
     }
@@ -639,19 +465,11 @@ const Skills = () => {
 
   useEffect(() => {
     return () => {
-      if (
-        skillImage &&
-        skillImagePreview?.startsWith("blob:")
-      ) {
-        URL.revokeObjectURL(
-          skillImagePreview
-        );
+      if (skillImage && skillImagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(skillImagePreview);
       }
     };
-  }, [
-    skillImage,
-    skillImagePreview,
-  ]);
+  }, [skillImage, skillImagePreview]);
 
   // =========================================================
   // RENDER
@@ -659,785 +477,318 @@ const Skills = () => {
 
   return (
     <>
-      <div className="relative w-full h-screen flex flex-col justify-center items-center">
-
+      <div className="relative w-full h-screen flex flex-col bg-[#dadada] text-black antialiased overflow-hidden">
         {/* =====================================================
             TOP BAR
         ====================================================== */}
-
-        <div className="TopBar w-full h-[8%] border-b border-[#0000009b] flex items-center justify-between px-[28px]">
-
+        <div className="TopBar w-full h-16 border-b border-[#0000009b] bg-[#dadada] flex items-center justify-between px-6 sm:px-8 shrink-0">
           {/* TITLE */}
-
           <div className="flex items-center gap-3">
-
-            <div
-              className="
-                w-9
-                h-9
-                rounded-lg
-                bg-black
-                text-white
-                flex
-                items-center
-                justify-center
-              "
-            >
+            <div className="w-9 h-9 rounded-lg bg-black text-white flex items-center justify-center shadow-xs">
               <GraduationCap size={18} />
             </div>
 
             <div>
-              <h1
-                className="
-                  text-base
-                  font-semibold
-                  leading-none
-                "
-              >
-                Skills
-              </h1>
-
-              <p
-                className="
-                  text-[11px]
-                  text-black/40
-                  mt-1
-                "
-              >
-                {skillsList.length}{" "}
-                record
-                {skillsList.length !== 1
-                  ? "s"
-                  : ""}
+              <h1 className="text-base font-semibold leading-none">Skills</h1>
+              <p className="text-[11px] text-black/40 mt-1">
+                {skillsList.length} record{skillsList.length !== 1 ? "s" : ""}
               </p>
             </div>
-
           </div>
 
           {/* ADD BUTTON */}
-
           <button
             type="button"
             onClick={openAddSkillForm}
-            className="
-              bg-black
-              text-white
-              p-[5px_20px]
-              rounded-lg
-              flex
-              items-center
-              justify-center
-              gap-2
-              font-semibold
-              cursor-pointer
-            "
+            className="bg-black text-white h-9 px-4 rounded-lg flex items-center justify-center gap-2 text-xs font-semibold hover:bg-zinc-800 transition-colors cursor-pointer shadow-xs"
           >
             Add Skill
-            <Plus
-              color="#ffffff"
-              size={18}
-            />
+            <Plus size={16} />
           </button>
-
         </div>
 
         {/* =====================================================
             MAIN CONTENT
         ====================================================== */}
-
-        <div className="MainContent w-full h-[92%] flex flex-col justify-center items-center relative">
-
+        <div className="MainContent w-full flex-1 flex flex-col justify-start items-center relative overflow-hidden">
           {/* ===================================================
-              SKILLS
+              SKILLS SECTION (GRID CONTAINER)
           ==================================================== */}
-
-          <div className="w-full h-[50%] border-b border-[#0000009b] p-4 overflow-auto">
-
-            <h1 className="text-2xl">
-              Skills
-              <span className="animate-pulse">
-                _
-              </span>
+          <div className="w-full h-1/2 border-b border-[#0000009b] p-4 sm:p-5 overflow-y-auto">
+            <h1 className="text-xl sm:text-2xl font-semibold">
+              Skills<span className="animate-pulse">_</span>
             </h1>
 
-            <div className="w-full h-auto flex flex-wrap gap-2 px-2 mt-5">
-
-              {skillsList.length > 0 ? (
-                skillsList.map((skill) => (
+            {skillsList.length > 0 ? (
+              <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4 mt-4 pb-2">
+                {skillsList.map((skill) => (
                   <div
-                    className="
-                      h-30
-                      w-30
-                      relative
-                      flex
-                      justify-center
-                      items-center
-                      flex-col
-                      group
-                      shrink-0
-                      mt-7
-                      mb-2
-                    "
+                    className="relative flex flex-col items-center justify-center p-3 rounded-2xl border border-black/15 bg-white/50 hover:bg-white/80 transition-all duration-300 group shadow-2xs"
                     key={skill._id}
                   >
-
                     {/* ACTIONS */}
-
-                    <div
-                      className="
-                        absolute
-                        top-0
-                        right-0
-                        w-auto
-                        h-auto
-                        flex
-                        items-center
-                        justify-between
-                        gap-2
-                        z-20
-                        bg-[#dadada]
-                        p-[5px]
-                        opacity-0
-                        pointer-events-none
-                        group-hover:!pointer-events-auto
-                        group-hover:opacity-100
-                        transition-all
-                        duration-300
-                        border
-                        rounded-lg
-                      "
-                    >
-
+                    <div className="absolute top-2 right-2 w-auto h-auto flex items-center justify-between gap-1 z-20 bg-[#dadada] p-1 opacity-0 pointer-events-none group-hover:!pointer-events-auto group-hover:opacity-100 transition-all duration-200 border border-black/30 rounded-lg shadow-xs">
                       {/* EDIT */}
-
                       <button
                         type="button"
-                        onClick={() =>
-                          openEditSkillForm(
-                            skill
-                          )
-                        }
-                        className="
-                          p-1
-                          bg-green-400
-                          text-white
-                          rounded-lg
-                          edit-icon
-                        "
+                        onClick={() => openEditSkillForm(skill)}
+                        className="p-1 bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors cursor-pointer"
                         title="Edit skill"
                       >
-                        <Pencil size={16} />
+                        <Pencil size={12} />
                       </button>
 
                       {/* DELETE */}
-
                       <button
                         type="button"
-                        onClick={() =>
-                          deleteSkill(
-                            skill._id
-                          )
-                        }
-                        disabled={
-                          skillDeleteLoading
-                        }
-                        className="
-                          p-1
-                          bg-red-400
-                          text-white
-                          rounded-lg
-                          disabled:opacity-50
-                        "
+                        onClick={() => deleteSkill(skill._id)}
+                        disabled={skillDeleteLoading}
+                        className="p-1 bg-red-500 hover:bg-red-600 text-white rounded-md disabled:opacity-50 transition-colors cursor-pointer"
                         title="Delete skill"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={12} />
                       </button>
-
                     </div>
 
-                    {/* PROGRESS */}
-
-                    <ChangingProgressProvider
-                      values={[
-                        0,
-                        skill.level || 0,
-                      ]}
-                    >
-                      {() => (
-                        <CircularProgressbarWithChildren
-                          value={
-                            skill.level || 0
-                          }
-                          styles={buildStyles({
-                            pathTransition:
-                              !skill.level
+                    {/* CIRCULAR PROGRESS */}
+                    <div className="w-24 h-24 my-2">
+                      <ChangingProgressProvider values={[0, skill.level || 0]}>
+                        {() => (
+                          <CircularProgressbarWithChildren
+                            value={skill.level || 0}
+                            styles={buildStyles({
+                              pathTransition: !skill.level
                                 ? "none"
                                 : "stroke-dashoffset 0.5s ease 0s",
-                            pathColor: "#000",
-                            trailColor:
-                              "#dadada",
-                          })}
-                        >
-
-                          {skill?.technology
-                            ?.url ? (
-                            <img
-                              style={{
-                                height: 30,
-                                marginTop: -5,
-                                marginBottom: 5,
-                              }}
-                              src={
-                                skill
-                                  .technology
-                                  .url
-                              }
-                              alt={
-                                skill.name
-                              }
-                            />
-                          ) : null}
-
-                          <div
-                            style={{
-                              fontSize: 12,
-                              marginTop: -5,
-                            }}
+                              pathColor: "#000",
+                              trailColor: "#c2c2c2",
+                            })}
                           >
-                            <strong>
-                              {skill.level ||
-                                0}
-                              %
-                            </strong>
-                          </div>
+                            {skill?.technology?.url ? (
+                              <img
+                                style={{
+                                  height: 28,
+                                  width: 28,
+                                  objectFit: "contain",
+                                  marginTop: -4,
+                                  marginBottom: 4,
+                                }}
+                                src={skill.technology.url}
+                                alt={skill.name}
+                              />
+                            ) : null}
 
-                        </CircularProgressbarWithChildren>
-                      )}
-                    </ChangingProgressProvider>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                marginTop: -2,
+                              }}
+                            >
+                              <strong>{skill.level || 0}%</strong>
+                            </div>
+                          </CircularProgressbarWithChildren>
+                        )}
+                      </ChangingProgressProvider>
+                    </div>
 
-                    <p className="text-center text-sm mt-1 flex items-center justify-center gap-2 border rounded-lg shrink-0 p-[3px_10px] font-semibold">
-                      <span className="w-2 h-2 bg-black rounded-full animate-pulse"/>
-                      {skill.name}
+                    {/* SKILL NAME CHIP */}
+                    <p className="w-full text-center text-xs mt-1 flex items-center justify-center gap-1.5 border border-black/20 bg-white/80 rounded-md py-1 px-2 font-semibold truncate shadow-2xs">
+                      <span className="w-1.5 h-1.5 bg-black rounded-full animate-pulse shrink-0" />
+                      <span className="truncate">{skill.name}</span>
                     </p>
-
                   </div>
-                ))
-              ) : (
-                <div className="w-full h-full flex justify-center items-center">
-
-                  <span
-                    className="
-                      flex
-                      items-center
-                      justify-center
-                      gap-2
-                      text-xl
-                      font-semibold
-                      text-black/20
-                      italic
-                      relative
-                      border
-                      border-dashed
-                      border-black/20
-                      p-[9px_24px]
-                      w-fit
-                    "
-                  >
-                    No Skills Found
-
-                    <PencilSparkles className="text-black/20" />
-
-                    <div className="absolute w-3 h-3 bg-black/25 -top-1.5 -left-1.5" />
-                    <div className="absolute w-3 h-3 bg-black/25 -top-1.5 -right-1.5" />
-                    <div className="absolute w-3 h-3 bg-black/25 -bottom-1.5 -left-1.5" />
-                    <div className="absolute w-3 h-3 bg-black/25 -bottom-1.5 -right-1.5" />
-
-                  </span>
-
-                </div>
-              )}
-
-            </div>
-
+                ))}
+              </div>
+            ) : (
+              <div className="w-full h-[80%] min-h-[140px] flex justify-center items-center">
+                <span className="flex items-center justify-center gap-2 text-lg font-semibold text-black/30 italic relative border border-dashed border-black/25 px-6 py-2 rounded-lg">
+                  No Skills Found
+                  <PencilSparkles size={18} className="text-black/30" />
+                </span>
+              </div>
+            )}
           </div>
 
           {/* ===================================================
-              CATEGORIES
+              CATEGORIES SECTION
           ==================================================== */}
-
-          <div className="w-full h-[50%] p-4">
-
-            <div className="flex w-full h-[10%] justify-between items-center">
-
-              <h1 className="text-2xl">
-                Category
-                <span className="animate-pulse">
-                  _
-                </span>
+          <div className="w-full h-1/2 p-4 sm:p-5 overflow-y-auto">
+            <div className="flex w-full justify-between items-center mb-3">
+              <h1 className="text-xl sm:text-2xl font-semibold">
+                Category<span className="animate-pulse">_</span>
               </h1>
 
               <button
                 type="button"
-                onClick={() =>
-                  setCategoryAddFormShow(
-                    true
-                  )
-                }
-                className="
-                  bg-black
-                  text-white
-                  p-[5px_20px]
-                  rounded-lg
-                  flex
-                  items-center
-                  justify-center
-                  gap-2
-                  font-semibold
-                  cursor-pointer
-                "
+                onClick={() => setCategoryAddFormShow(true)}
+                className="bg-black text-white h-8 px-3 rounded-lg flex items-center justify-center gap-1.5 text-xs font-semibold hover:bg-zinc-800 transition-colors cursor-pointer shadow-xs"
               >
                 Add Category
-                <Plus
-                  color="#ffffff"
-                  size={18}
-                />
+                <Plus size={15} />
               </button>
-
             </div>
 
             <div
-              className={`
-                w-full
-                h-[90%]
-                flex
-                gap-2
-                px-2
-                mt-5
-                ${
-                  Categories.length > 0
-                    ? "flex-wrap content-start"
-                    : "justify-center items-center"
-                }
-              `}
+              className={`w-full flex gap-2 pt-1 ${
+                Categories.length > 0
+                  ? "flex-wrap content-start"
+                  : "justify-center items-center min-h-[120px]"
+              }`}
             >
-
               {Categories.length > 0 ? (
                 Categories.map((cat) => (
                   <span
                     key={cat._id}
-                    className="
-                      w-auto
-                      shrink-0
-                      flex
-                      items-center
-                      justify-between
-                      border
-                      border-[#0000009b]
-                      p-[5px]
-                      gap-3
-                      rounded-lg
-                      font-semibold
-                      h-fit
-                    "
+                    className="w-auto shrink-0 flex items-center justify-between border border-black/30 bg-white/70 px-3 py-1.5 gap-2.5 rounded-lg text-xs font-semibold shadow-2xs"
                   >
-
                     {cat.name?.toUpperCase()}
 
                     <button
                       type="button"
-                      onClick={() =>
-                        deleteCategory(
-                          cat._id
-                        )
-                      }
-                      disabled={
-                        categoryDeleteLoading
-                      }
-                      className="
-                        p-1
-                        bg-[#E7000B]
-                        text-white
-                        rounded-lg
-                        disabled:opacity-50
-                      "
+                      onClick={() => deleteCategory(cat._id)}
+                      disabled={categoryDeleteLoading}
+                      className="p-1 bg-[#E7000B] hover:bg-red-700 text-white rounded-md disabled:opacity-50 transition-colors cursor-pointer"
+                      title="Delete Category"
                     >
                       {categoryDeleteLoading ? (
-                        <span
-                          className="
-                            w-5
-                            h-5
-                            border-2
-                            border-white
-                            border-t-transparent
-                            rounded-full
-                            animate-spin
-                            inline-block
-                          "
-                        />
+                        <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />
                       ) : (
-                        <Trash2 />
+                        <Trash2 size={13} />
                       )}
                     </button>
-
                   </span>
                 ))
               ) : (
                 <div className="w-full h-full flex justify-center items-center">
-
-                  <span
-                    className="
-                      flex
-                      items-center
-                      justify-center
-                      gap-2
-                      text-xl
-                      font-semibold
-                      text-black/20
-                      italic
-                      relative
-                      border
-                      border-dashed
-                      border-black/20
-                      p-[9px_24px]
-                      w-fit
-                    "
-                  >
+                  <span className="flex items-center justify-center gap-2 text-lg font-semibold text-black/30 italic relative border border-dashed border-black/25 px-6 py-2 rounded-lg">
                     No Categories Found
-
-                    <PencilSparkles className="text-black/20" />
-
-                    <div className="absolute w-3 h-3 bg-black/25 -top-1.5 -left-1.5" />
-                    <div className="absolute w-3 h-3 bg-black/25 -top-1.5 -right-1.5" />
-                    <div className="absolute w-3 h-3 bg-black/25 -bottom-1.5 -left-1.5" />
-                    <div className="absolute w-3 h-3 bg-black/25 -bottom-1.5 -right-1.5" />
-
+                    <PencilSparkles size={18} className="text-black/30" />
                   </span>
-
                 </div>
               )}
-
             </div>
-
           </div>
-
         </div>
       </div>
 
       {/* =======================================================
-          ADD / EDIT SKILL FORM
+          ADD / EDIT SKILL MODAL FORM
       ======================================================== */}
-
       {skillFormShow && (
         <div
           onClick={closeSkillForm}
-          className="
-            min-w-screen
-            min-h-screen
-            flex
-            items-center
-            justify-center
-            fixed
-            top-0
-            right-0
-            bg-black/20
-            z-[3000]
-          "
+          className="fixed inset-0 z-[3000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
         >
-
           <form
             onSubmit={handleSkillSubmit}
-            onClick={(e) =>
-              e.stopPropagation()
-            }
-            className="
-              w-[90%]
-              sm:w-[30%]
-              h-auto
-              flex
-              flex-col
-              justify-center
-              items-center
-              bg-white
-              rounded-lg
-              p-3
-              gap-3
-              relative
-            "
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl border border-black/10 flex flex-col gap-4 relative"
           >
-
             {/* CLOSE */}
-
             <button
               type="button"
               onClick={closeSkillForm}
-              className="
-                absolute
-                top-3
-                right-3
-                text-black/50
-                hover:text-black
-              "
+              className="absolute top-4 right-4 text-black/50 hover:text-black transition-colors cursor-pointer"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
             {/* TITLE */}
+            <div>
+              <h2 className="text-lg font-bold text-black">
+                {isEditMode ? "Update Skill" : "Add Skill"}
+              </h2>
+              <p className="text-[11px] text-black/40 mt-0.5">
+                Configure your proficiency rating and icon badge
+              </p>
+            </div>
 
-            <h1 className="text-2xl font-semibold">
-              {isEditMode
-                ? "Update Skill"
-                : "Add Skill"}
-            </h1>
-
-            {/* SKILL */}
-
-            <div
-              className="
-                w-full
-                flex
-                justify-start
-                items-start
-                flex-col
-                gap-2
-              "
-            >
-              <label htmlFor="skill">
-                Skill
+            {/* SKILL NAME */}
+            <div className="w-full flex flex-col gap-1.5">
+              <label htmlFor="skill" className="text-xs font-semibold">
+                Skill Name
               </label>
-
               <input
                 type="text"
                 id="skill"
                 value={skillName}
-                onChange={(e) =>
-                  setSkillName(
-                    e.target.value
-                  )
-                }
-                placeholder="HTML"
-                className="
-                  w-full
-                  border
-                  outline-4
-                  outline-transparent
-                  focus:border-transparent
-                  focus:outline-black
-                  text-lg
-                  transition-all
-                  duration-300
-                  p-[5px_20px]
-                  rounded-lg
-                "
+                onChange={(e) => setSkillName(e.target.value)}
+                placeholder="e.g. React, TypeScript, Docker"
+                className="w-full h-10 px-3 rounded-lg border border-black/20 text-xs outline-none focus:border-black"
                 required
               />
             </div>
 
             {/* CATEGORY */}
-
-            <div
-              className="
-                w-full
-                flex
-                justify-start
-                items-start
-                flex-col
-                gap-2
-              "
-            >
-              <label htmlFor="category">
+            <div className="w-full flex flex-col gap-1.5">
+              <label htmlFor="category" className="text-xs font-semibold">
                 Category
               </label>
-
               <select
                 id="category"
                 value={category}
-                onChange={(e) =>
-                  setCategory(
-                    e.target.value
-                  )
-                }
-                className="
-                  w-full
-                  border
-                  outline-4
-                  outline-transparent
-                  focus:border-transparent
-                  focus:outline-black
-                  text-lg
-                  transition-all
-                  duration-300
-                  p-[5px_20px]
-                  rounded-lg
-                "
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-black/20 text-xs outline-none focus:border-black bg-white"
                 required
               >
-
-                <option value="">
-                  Select category
-                </option>
-
-                {Categories.map(
-                  (cat) => (
-                    <option
-                      key={cat._id}
-                      value={cat._id}
-                    >
-                      {cat.name}
-                    </option>
-                  )
-                )}
-
+                <option value="">Select category</option>
+                {Categories.map((cat) => (
+                  <option key={cat._id} value={cat._id}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
             </div>
 
             {/* LEVEL */}
-
-            <div
-              className="
-                w-full
-                flex
-                justify-start
-                items-start
-                flex-col
-                gap-2
-              "
-            >
-              <label htmlFor="level">
-                Level of knowledge
+            <div className="w-full flex flex-col gap-1.5">
+              <label htmlFor="level" className="text-xs font-semibold">
+                Level of Knowledge
               </label>
-
               <select
                 id="level"
                 value={levelOfKnowledge}
-                onChange={(e) =>
-                  setLevelOfKnowledge(
-                    e.target.value
-                  )
-                }
-                className="
-                  w-full
-                  border
-                  outline-4
-                  outline-transparent
-                  focus:border-transparent
-                  focus:outline-black
-                  text-lg
-                  transition-all
-                  duration-300
-                  p-[5px_20px]
-                  rounded-lg
-                "
+                onChange={(e) => setLevelOfKnowledge(e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-black/20 text-xs outline-none focus:border-black bg-white"
                 required
               >
-
-                <option value="">
-                  Select level
-                </option>
-
-                {knowledgeLevels.map(
-                  (level) => (
-                    <option
-                      key={level}
-                      value={level}
-                    >
-                      {level}
-                    </option>
-                  )
-                )}
-
+                <option value="">Select level</option>
+                {knowledgeLevels.map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
               </select>
             </div>
 
             {/* SKILL IMAGE */}
-
-            <div
-              className="
-                w-full
-                flex
-                justify-start
-                items-start
-                flex-col
-                gap-2
-              "
-            >
-
-              <span className="text-sm font-medium">
-                Skill Image
-              </span>
+            <div className="w-full flex flex-col gap-1.5">
+              <span className="text-xs font-semibold">Skill Icon</span>
 
               {!skillImagePreview ? (
                 <label
                   htmlFor="SkillImg"
-                  className="
-                    w-full
-                    flex
-                    items-center
-                    justify-center
-                    gap-2
-                    border
-                    border-dashed
-                    border-black/30
-                    p-3
-                    rounded-lg
-                    cursor-pointer
-                    hover:bg-black/5
-                    transition-colors
-                  "
+                  className="w-full h-20 border border-dashed border-black/25 bg-black/[0.02] hover:bg-black/[0.04] rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
                 >
-                  Click to Upload Image
+                  <span className="text-xs text-black/50">Click to upload icon</span>
                 </label>
               ) : (
-                <div
-                  className="
-                    w-full
-                    relative
-                    border
-                    border-black/20
-                    rounded-lg
-                    p-2
-                    flex
-                    items-center
-                    justify-center
-                  "
-                >
-
+                <div className="w-full h-24 relative border border-black/20 rounded-xl p-2 flex items-center justify-center bg-black/[0.02]">
                   <img
                     src={skillImagePreview}
                     alt="Skill preview"
-                    className="
-                      max-h-40
-                      object-contain
-                      rounded-md
-                    "
+                    className="max-h-full object-contain"
                   />
-
-                  {(skillImage ||
-                    !isEditMode) && (
+                  {(skillImage || !isEditMode) && (
                     <button
                       type="button"
-                      onClick={
-                        removeSkillImage
-                      }
-                      className="
-                        absolute
-                        top-2
-                        right-2
-                        bg-red-500
-                        hover:bg-red-600
-                        text-white
-                        rounded-full
-                        w-8
-                        h-8
-                        flex
-                        items-center
-                        justify-center
-                      "
+                      onClick={removeSkillImage}
+                      className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center cursor-pointer shadow-sm"
                       title="Remove image"
                     >
-                      <XIcon />
+                      <X size={13} />
                     </button>
                   )}
-
                 </div>
               )}
 
@@ -1446,216 +797,92 @@ const Skills = () => {
                 id="SkillImg"
                 accept="image/*"
                 hidden
-                onChange={
-                  handleSkillImageChange
-                }
+                onChange={handleSkillImageChange}
               />
 
               {isEditMode && (
                 <label
                   htmlFor="SkillImg"
-                  className="
-                    text-xs
-                    text-black/60
-                    underline
-                    cursor-pointer
-                  "
+                  className="text-[11px] text-black/60 underline cursor-pointer hover:text-black"
                 >
-                  {skillImage
-                    ? "Change selected image"
-                    : "Change image"}
+                  {skillImage ? "Change selected file" : "Replace current image"}
                 </label>
               )}
-
             </div>
 
-            {/* SUBMIT */}
-
+            {/* SUBMIT BUTTON */}
             <button
               type="submit"
-              disabled={
-                skillLoading ||
-                !canSubmitSkill
-              }
-              className="
-                w-full
-                bg-black
-                text-white
-                text-xl
-                py-2
-                rounded-lg
-                font-semibold
-                flex
-                items-center
-                justify-center
-                gap-3
-                disabled:bg-black/40
-                disabled:cursor-not-allowed
-              "
+              disabled={skillLoading || !canSubmitSkill}
+              className="w-full h-10 bg-black text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-800 transition-colors cursor-pointer mt-2"
             >
-
               {skillLoading && (
-                <span
-                  className="
-                    h-5
-                    w-5
-                    border-2
-                    border-t-transparent
-                    animate-spin
-                    border-white
-                    rounded-full
-                  "
-                />
+                <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               )}
-
               {skillLoading
                 ? isEditMode
                   ? "Updating..."
                   : "Adding..."
                 : isEditMode
-                  ? isSkillFormDirty
-                    ? "Update"
-                    : "No changes"
-                  : "Add"}
-
+                ? isSkillFormDirty
+                  ? "Update Skill"
+                  : "No Changes"
+                : "Add Skill"}
             </button>
-
           </form>
-
         </div>
       )}
 
       {/* =======================================================
-          ADD CATEGORY FORM
+          ADD CATEGORY MODAL FORM
       ======================================================== */}
-
       {categoryAddFormShow && (
         <div
-          onClick={() =>
-            setCategoryAddFormShow(false)
-          }
-          className="
-            min-w-screen
-            min-h-screen
-            flex
-            items-center
-            justify-center
-            fixed
-            top-0
-            right-0
-            bg-black/20
-            z-[3000]
-          "
+          onClick={() => setCategoryAddFormShow(false)}
+          className="fixed inset-0 z-[3000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
         >
-
           <form
             onSubmit={handleCategory}
-            onClick={(e) =>
-              e.stopPropagation()
-            }
-            className="
-              w-[90%]
-              sm:w-[30%]
-              h-auto
-              flex
-              flex-col
-              justify-center
-              items-center
-              bg-white
-              rounded-lg
-              p-3
-              gap-3
-            "
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm bg-white rounded-2xl p-6 shadow-2xl border border-black/10 flex flex-col gap-4 relative"
           >
+            <div className="flex items-center justify-between border-b border-black/10 pb-2">
+              <h2 className="text-base font-bold text-black">Add Category</h2>
+              <button
+                type="button"
+                onClick={() => setCategoryAddFormShow(false)}
+                className="text-black/40 hover:text-black cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
 
-            <h1 className="text-2xl font-semibold">
-              Add Category
-            </h1>
-
-            <div
-              className="
-                w-full
-                flex
-                justify-start
-                items-start
-                flex-col
-                gap-2
-              "
-            >
-
-              <label htmlFor="categoryName">
-                Category
+            <div className="w-full flex flex-col gap-1.5">
+              <label htmlFor="categoryName" className="text-xs font-semibold">
+                Category Name
               </label>
-
               <input
                 type="text"
                 id="categoryName"
                 value={categoryName}
-                onChange={(e) =>
-                  setCategoryName(
-                    e.target.value
-                  )
-                }
-                placeholder="Frontend"
-                className="
-                  w-full
-                  border
-                  outline-4
-                  outline-transparent
-                  focus:border-transparent
-                  focus:outline-black
-                  text-lg
-                  transition-all
-                  duration-300
-                  p-[5px_20px]
-                  rounded-lg
-                "
+                onChange={(e) => setCategoryName(e.target.value)}
+                placeholder="e.g. Frontend, Backend, DevOps"
+                className="w-full h-10 px-3 rounded-lg border border-black/20 text-xs outline-none focus:border-black"
                 required
               />
-
             </div>
 
             <button
               type="submit"
               disabled={categoryLoading}
-              className="
-                w-full
-                bg-black
-                text-white
-                text-xl
-                py-2
-                rounded-lg
-                font-semibold
-                flex
-                items-center
-                justify-center
-                gap-3
-                disabled:bg-black/50
-              "
+              className="w-full h-10 bg-black text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-2 hover:bg-zinc-800 disabled:opacity-50 transition-colors cursor-pointer"
             >
-
               {categoryLoading && (
-                <span
-                  className="
-                    h-5
-                    w-5
-                    border-2
-                    border-t-transparent
-                    animate-spin
-                    border-white
-                    rounded-full
-                  "
-                />
+                <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               )}
-
-              {categoryLoading
-                ? "Adding..."
-                : "Add"}
-
+              {categoryLoading ? "Adding..." : "Add Category"}
             </button>
-
           </form>
-
         </div>
       )}
     </>

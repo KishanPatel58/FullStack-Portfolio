@@ -13,6 +13,8 @@ import Experience from './pages/admin/Experience'
 import Projects from './pages/admin/Projects'
 import SelectedProjectPage from './pages/admin/SelectedProjectPage'
 import About from './pages/admin/About';
+import Notifications from './pages/admin/Notifications';
+import Resume from './pages/admin/Resume';
 
 const App = () => {
   return (
@@ -36,6 +38,8 @@ const App = () => {
             <Route path='projects' element={<Projects />} />
             <Route path='projects/:id' element={<SelectedProjectPage />} />
             <Route path='about' element={<About />} />
+            <Route path='notifications' element={<Notifications />} />
+            <Route path='resume' element={<Resume />} />
           </Route>
         </Route>
 

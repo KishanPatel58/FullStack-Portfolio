@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser';
 import Cors from 'cors';
 import authRouter from './routes/auth.routes.js';
 import adminRouter from './routes/admin.routes.js';
+import publicRouter from './routes/public.routes.js';
 
 const app = express();
 
@@ -11,8 +12,8 @@ const origins = process.env.ORIGINS
   : ["http://localhost:5173"];
 
 // Default Middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
 
 app.use(
@@ -27,5 +28,8 @@ app.use(
 // Routers
 app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRouter);
+
+// Public Router
+app.use("/api/portfolio", publicRouter)
 
 export default app;

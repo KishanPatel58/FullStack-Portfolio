@@ -6,11 +6,14 @@ import Skills from "../models/skill.model.js";
 import Category from "../models/skillcategory.model.js";
 import Experience from "../models/experience.model.js";
 import fs from "fs";
-import Project from "../models/project.model.js"
+import Project from "../models/project.model.js";
 import TechStack from "../models/techstack.model.js";
 import Hobbies from "../models/hobby.model.js";
 import socialProfiles from "../models/socialprofile.model.js";
+import Contact from "../models/contact.model.js";
+import sendMail from "../config/email.config.js";
 
+// Helper: Safely parse work points
 const parseWorkPoints = (rawWork) => {
   if (!rawWork) return [];
   try {
@@ -34,45 +37,50 @@ const safeJsonParse = (rawData, fallback = []) => {
   }
 };
 
-// upload profile image
+// ============================================================
+// PROFILE IMAGE CONTROLLERS
+// ============================================================
+
 export const uploadProfile = async (req, res) => {
-  const adminId = req.admin._id || req.admin.id;
+  const adminId = req.admin?._id || req.admin?.id;
   const file = req.file;
   try {
     if (!file) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
-        message: "Imagefile not found."
-      })
+        message: "Image file not found.",
+      });
     }
+
     const admin = await Admin.findById(adminId);
     if (!admin) {
-      return res.status(401).json({
+      return res.status(404).json({
         success: false,
-        message: "Admin not found."
-      })
+        message: "Admin not found.",
+      });
     }
-    // upload profile image
+
     const result = await uploadImage(file);
+    if (!admin.about) admin.about = {};
+    if (!admin.about.profile) admin.about.profile = {};
+
     admin.about.profile.fileId = result.fileId;
     admin.about.profile.url = result.url;
     await admin.save();
+
     return res.status(201).json({
       success: true,
-      message:"Profile Added Successfully..."
-    })
+      message: "Profile Added Successfully...",
+      profile: admin.about.profile,
+    });
   } catch (error) {
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to Upload Profile."
-    })
+      message: error.message || "Failed to Upload Profile.",
+    });
   }
-}
+};
 
-// ============================================================
-// UPDATE PROFILE IMAGE
-// PUT /api/admin/profile/update
-// ============================================================
 export const updateProfile = async (req, res) => {
   const adminId = req.admin?._id || req.admin?.id;
   const file = req.file;
@@ -101,8 +109,6 @@ export const updateProfile = async (req, res) => {
     }
 
     const oldFileId = admin.about?.profile?.fileId;
-
-    // Upload new image first
     const result = await uploadImage(file);
 
     if (!admin.about) admin.about = {};
@@ -112,7 +118,6 @@ export const updateProfile = async (req, res) => {
     admin.about.profile.url = result.url;
     await admin.save();
 
-    // Delete previous image from ImageKit
     if (oldFileId) {
       await deleteImage(oldFileId).catch((err) =>
         console.warn("Failed to delete old profile image:", err.message)
@@ -137,10 +142,6 @@ export const updateProfile = async (req, res) => {
   }
 };
 
-// ============================================================
-// DELETE PROFILE IMAGE
-// DELETE /api/admin/profile/delete
-// ============================================================
 export const deleteProfile = async (req, res) => {
   const adminId = req.admin?._id || req.admin?.id;
 
@@ -188,6 +189,10 @@ export const deleteProfile = async (req, res) => {
     });
   }
 };
+
+// ============================================================
+// SKILLS CONTROLLERS
+// ============================================================
 
 const VALID_LEVELS = [
   "Beginner",
@@ -257,7 +262,7 @@ export const addSkill = async (req, res) => {
     const skillData = {
       name: name.trim(),
       levelOfKnowledge,
-      level: LEVEL_VALUES[levelOfKnowledge], // number for progress UI
+      level: LEVEL_VALUES[levelOfKnowledge],
       user: admin._id,
     };
 
@@ -328,7 +333,6 @@ export const updateSkill = async (req, res) => {
       });
     }
 
-    // Ownership: skill must belong to this admin
     const skillBelongsToAdmin = admin.about?.skills?.some(
       (skill) => skill.toString() === skillId
     );
@@ -348,12 +352,10 @@ export const updateSkill = async (req, res) => {
       });
     }
 
-    // Name
     if (name) {
       skill.name = name.trim();
     }
 
-    // Level of knowledge + numeric level
     if (levelOfKnowledge) {
       if (!VALID_LEVELS.includes(levelOfKnowledge)) {
         return res.status(400).json({
@@ -365,7 +367,6 @@ export const updateSkill = async (req, res) => {
       skill.level = LEVEL_VALUES[levelOfKnowledge];
     }
 
-    // Category
     if (category !== undefined) {
       if (category === null || category === "") {
         skill.category = undefined;
@@ -381,7 +382,6 @@ export const updateSkill = async (req, res) => {
       }
     }
 
-    // Image (optional)
     if (file) {
       const result = await uploadImage(file);
       const oldFileId = skill.technology?.imageId;
@@ -394,11 +394,9 @@ export const updateSkill = async (req, res) => {
       await skill.save();
 
       if (oldFileId) {
-        try {
-          await deleteImage(oldFileId);
-        } catch (deleteError) {
-          console.error("Failed to delete old skill image:", deleteError);
-        }
+        await deleteImage(oldFileId).catch((deleteError) =>
+          console.error("Failed to delete old skill image:", deleteError)
+        );
       }
     } else {
       await skill.save();
@@ -470,15 +468,9 @@ export const deleteSkill = async (req, res) => {
     }
 
     if (skill.technology?.imageId) {
-      try {
-        await deleteImage(skill.technology.imageId);
-      } catch (imageError) {
-        console.error("Failed to delete skill image:", imageError);
-        return res.status(500).json({
-          success: false,
-          message: "Failed to delete skill image.",
-        });
-      }
+      await deleteImage(skill.technology.imageId).catch((err) =>
+        console.error("Failed to delete skill image:", err)
+      );
     }
 
     await Skills.findByIdAndDelete(skillId);
@@ -507,67 +499,43 @@ export const getSkills = async (req, res) => {
     if (!adminId) {
       return res.status(401).json({
         success: false,
-        message: "Please Login First."
-      })
+        message: "Please Login First.",
+      });
     }
     const admin = await Admin.findById(adminId);
     if (!admin) {
       return res.status(404).json({
         success: false,
-        message: "You Are not Authorized!"
-      })
+        message: "You Are not Authorized!",
+      });
     }
-    const skills = await Skills.find({ user: admin._id }).populate("category", "name") // only name (and _id by default)
+    const skills = await Skills.find({ user: admin._id })
+      .populate("category", "name")
       .sort({ createdAt: -1 });
-    if (!skills) {
-      return res.json({
-        success: false,
-        message: "No Skills Found."
-      })
-    }
+
     return res.status(200).json({
       success: true,
-      message: "Category Fetched Successfully.",
-      skills
-    })
+      message: "Skills Fetched Successfully.",
+      skills: skills || [],
+    });
   } catch (error) {
-    console.error("Failed to Fetch Categories:", error);
-
+    console.error("Failed to Fetch Skills:", error);
     return res.status(500).json({
       success: false,
-      message: "Failed to Fetch Categories.",
+      message: "Failed to Fetch Skills.",
     });
   }
-}
+};
 
-// =========================================================
-// ADD EDUCATION
-// =========================================================
+// ============================================================
+// EDUCATION CONTROLLERS
+// ============================================================
 
 export const addEducation = async (req, res) => {
   try {
-    // =======================================================
-    // GET DATA
-    // =======================================================
-
-    const adminId =
-      req.admin?._id ||
-      req.admin?.id;
-
-    const {
-      instituteName,
-      study,
-      grade,
-      currentlyStudying,
-      passedYear,
-      address,
-    } = req.body;
-
+    const adminId = req.admin?._id || req.admin?.id;
+    const { instituteName, study, grade, currentlyStudying, passedYear, address } = req.body;
     const file = req.file;
-
-    // =======================================================
-    // AUTH CHECK
-    // =======================================================
 
     if (!adminId) {
       return res.status(401).json({
@@ -576,12 +544,7 @@ export const addEducation = async (req, res) => {
       });
     }
 
-    // =======================================================
-    // FIND ADMIN
-    // =======================================================
-
     const admin = await Admin.findById(adminId);
-
     if (!admin) {
       return res.status(404).json({
         success: false,
@@ -589,20 +552,12 @@ export const addEducation = async (req, res) => {
       });
     }
 
-    // =======================================================
-    // VALIDATE INSTITUTE NAME
-    // =======================================================
-
     if (!instituteName?.trim()) {
       return res.status(400).json({
         success: false,
         message: "Institute name is required.",
       });
     }
-
-    // =======================================================
-    // VALIDATE STUDY
-    // =======================================================
 
     const validStudies = [
       "10th",
@@ -628,29 +583,10 @@ export const addEducation = async (req, res) => {
       });
     }
 
-    // =======================================================
-    // PARSE CURRENTLY STUDYING
-    // =======================================================
-    //
-    // Frontend sends FormData, therefore boolean arrives
-    // as a string:
-    //
-    // "true"
-    // "false"
-    //
-    // =======================================================
-
     const isCurrentlyStudying =
-      currentlyStudying === true ||
-      currentlyStudying === "true";
-
-    // =======================================================
-    // PARSE GRADE
-    // =======================================================
+      currentlyStudying === true || currentlyStudying === "true";
 
     let parsedGrade = grade;
-
-    // FormData sends grade as JSON string.
     if (typeof grade === "string") {
       try {
         parsedGrade = JSON.parse(grade);
@@ -662,40 +598,15 @@ export const addEducation = async (req, res) => {
       }
     }
 
-    // =======================================================
-    // VALIDATE GRADE
-    // =======================================================
+    const validGradeTitles = ["cgpa", "gpa", "spi", "percentage"];
+    const gradeTitle = parsedGrade?.title?.toString()?.trim()?.toLowerCase();
 
-    const validGradeTitles = [
-      "cgpa",
-      "gpa",
-      "spi",
-      "percentage",
-    ];
-
-    const gradeTitle =
-      parsedGrade?.title
-        ?.toString()
-        ?.trim()
-        ?.toLowerCase();
-
-    if (!gradeTitle) {
-      return res.status(400).json({
-        success: false,
-        message: "Grade title is required.",
-      });
-    }
-
-    if (!validGradeTitles.includes(gradeTitle)) {
+    if (!gradeTitle || !validGradeTitles.includes(gradeTitle)) {
       return res.status(400).json({
         success: false,
         message: `Invalid grade title. Allowed: ${validGradeTitles.join(", ")}`,
       });
     }
-
-    // =======================================================
-    // GRADE VALUE
-    // =======================================================
 
     if (
       parsedGrade?.value === undefined ||
@@ -708,19 +619,13 @@ export const addEducation = async (req, res) => {
       });
     }
 
-    const gradeValue =
-      Number(parsedGrade.value);
-
+    const gradeValue = Number(parsedGrade.value);
     if (Number.isNaN(gradeValue)) {
       return res.status(400).json({
         success: false,
         message: "Grade value must be a number.",
       });
     }
-
-    // =======================================================
-    // VALIDATE ADDRESS
-    // =======================================================
 
     if (!address?.trim()) {
       return res.status(400).json({
@@ -729,44 +634,16 @@ export const addEducation = async (req, res) => {
       });
     }
 
-    // =======================================================
-    // PASSED YEAR LOGIC
-    // =======================================================
-    //
-    // CURRENTLY STUDYING = TRUE
-    // ---------------------------------
-    // passedYear MUST be null.
-    //
-    // CURRENTLY STUDYING = FALSE
-    // ---------------------------------
-    // passedYear MUST be provided.
-    //
-    // =======================================================
-
     let parsedPassedYear = null;
-
-    if (isCurrentlyStudying) {
-      // Currently studying.
-      // No passed year.
-      parsedPassedYear = null;
-    } else {
-      // Completed education.
+    if (!isCurrentlyStudying) {
       if (!passedYear) {
         return res.status(400).json({
           success: false,
-          message:
-            "Passed year is required when currently studying is unchecked.",
+          message: "Passed year is required when currently studying is unchecked.",
         });
       }
-
-      parsedPassedYear =
-        new Date(passedYear);
-
-      if (
-        Number.isNaN(
-          parsedPassedYear.getTime()
-        )
-      ) {
+      parsedPassedYear = new Date(passedYear);
+      if (Number.isNaN(parsedPassedYear.getTime())) {
         return res.status(400).json({
           success: false,
           message: "Invalid passed year.",
@@ -774,176 +651,70 @@ export const addEducation = async (req, res) => {
       }
     }
 
-    // =======================================================
-    // CREATE EDUCATION DATA
-    // =======================================================
-
     const educationData = {
-      instituteName:
-        instituteName.trim(),
-
-      // IMPORTANT:
-      // This is now the actual study.
-      //
-      // Example:
-      // IT
-      // AIML
-      // CSE
+      instituteName: instituteName.trim(),
       study: study.trim(),
-
       grade: {
         title: gradeTitle,
         value: gradeValue,
       },
-
-      currentlyStudying:
-        isCurrentlyStudying,
-
-      passedYear:
-        parsedPassedYear,
-
-      address:
-        address.trim(),
-
+      currentlyStudying: isCurrentlyStudying,
+      passedYear: parsedPassedYear,
+      address: address.trim(),
       user: admin._id,
     };
 
-    // =======================================================
-    // UPLOAD LOGO
-    // =======================================================
-
     if (file) {
-      const result =
-        await uploadImage(file);
-
+      const result = await uploadImage(file);
       educationData.instituteLogo = {
         url: result.url,
         imageId: result.fileId,
       };
     }
 
-    // =======================================================
-    // CREATE EDUCATION
-    // =======================================================
+    const education = await Education.create(educationData);
 
-    const education =
-      await Education.create(
-        educationData
-      );
-
-    // =======================================================
-    // ADD EDUCATION ID TO ADMIN
-    // =======================================================
-
-    if (!admin.about) {
-      admin.about = {};
-    }
-
-    if (
-      !Array.isArray(
-        admin.about.education
-      )
-    ) {
-      admin.about.education = [];
-    }
-
-    admin.about.education.push(
-      education._id
-    );
-
+    if (!admin.about) admin.about = {};
+    if (!Array.isArray(admin.about.education)) admin.about.education = [];
+    admin.about.education.push(education._id);
     await admin.save();
-
-    // =======================================================
-    // RESPONSE
-    // =======================================================
 
     return res.status(201).json({
       success: true,
-      message:
-        "Education added successfully.",
+      message: "Education added successfully.",
       education,
     });
-
   } catch (error) {
-    console.error(
-      "Failed to add education:",
-      error
-    );
-
+    console.error("Failed to add education:", error);
     return res.status(500).json({
       success: false,
-      message:
-        error.message ||
-        "Failed to add education.",
+      message: error.message || "Failed to add education.",
     });
   }
 };
 
-
-// export const update education.
-// =========================================================
-// UPDATE EDUCATION
-// =========================================================
-
-export const updateEducation = async (
-  req,
-  res
-) => {
+export const updateEducation = async (req, res) => {
   try {
-    // =======================================================
-    // GET DATA
-    // =======================================================
-
-    const adminId =
-      req.admin?._id ||
-      req.admin?.id;
-
-    const {
-      id: educationId,
-    } = req.params;
-
-    const {
-      instituteName,
-      study,
-      grade,
-      currentlyStudying,
-      passedYear,
-      address,
-    } = req.body;
-
+    const adminId = req.admin?._id || req.admin?.id;
+    const { id: educationId } = req.params;
+    const { instituteName, study, grade, currentlyStudying, passedYear, address } = req.body;
     const file = req.file;
-
-    // =======================================================
-    // CHECK EDUCATION ID
-    // =======================================================
 
     if (!educationId) {
       return res.status(400).json({
         success: false,
-        message:
-          "Please select education to update.",
+        message: "Please select education to update.",
       });
     }
-
-    // =======================================================
-    // AUTH CHECK
-    // =======================================================
 
     if (!adminId) {
       return res.status(401).json({
         success: false,
-        message:
-          "Please login first.",
+        message: "Please login first.",
       });
     }
 
-    // =======================================================
-    // FIND ADMIN
-    // =======================================================
-
-    const admin =
-      await Admin.findById(adminId);
-
+    const admin = await Admin.findById(adminId);
     if (!admin) {
       return res.status(404).json({
         success: false,
@@ -951,45 +722,24 @@ export const updateEducation = async (
       });
     }
 
-    // =======================================================
-    // CHECK OWNERSHIP
-    // =======================================================
-
-    const isEducationOwned =
-      admin.about?.education?.some(
-        (id) =>
-          id.toString() ===
-          educationId
-      );
+    const isEducationOwned = admin.about?.education?.some(
+      (id) => id.toString() === educationId
+    );
 
     if (!isEducationOwned) {
       return res.status(403).json({
         success: false,
-        message:
-          "You are not authorized to update this education.",
+        message: "You are not authorized to update this education.",
       });
     }
 
-    // =======================================================
-    // FIND EDUCATION
-    // =======================================================
-
-    const education =
-      await Education.findById(
-        educationId
-      );
-
+    const education = await Education.findById(educationId);
     if (!education) {
       return res.status(404).json({
         success: false,
-        message:
-          "Education not found.",
+        message: "Education not found.",
       });
     }
-
-    // =======================================================
-    // VALID STUDIES
-    // =======================================================
 
     const validStudies = [
       "10th",
@@ -1001,582 +751,298 @@ export const updateEducation = async (
       "Cyber Security",
     ];
 
-    // =======================================================
-    // UPDATE INSTITUTE NAME
-    // =======================================================
-
-    if (
-      instituteName !== undefined
-    ) {
+    if (instituteName !== undefined) {
       if (!instituteName.trim()) {
         return res.status(400).json({
           success: false,
-          message:
-            "Institute name cannot be empty.",
+          message: "Institute name cannot be empty.",
         });
       }
-
-      education.instituteName =
-        instituteName.trim();
+      education.instituteName = instituteName.trim();
     }
 
-    // =======================================================
-    // UPDATE STUDY
-    // =======================================================
-
     if (study !== undefined) {
-      const trimmedStudy =
-        study.trim();
-
-      if (!trimmedStudy) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Study cannot be empty.",
-        });
-      }
-
-      if (
-        !validStudies.includes(
-          trimmedStudy
-        )
-      ) {
+      const trimmedStudy = study.trim();
+      if (!trimmedStudy || !validStudies.includes(trimmedStudy)) {
         return res.status(400).json({
           success: false,
           message: `Invalid study. Allowed: ${validStudies.join(", ")}`,
         });
       }
-
-      education.study =
-        trimmedStudy;
+      education.study = trimmedStudy;
     }
 
-    // =======================================================
-    // UPDATE GRADE
-    // =======================================================
-
     if (grade !== undefined) {
-      // -----------------------------------------------------
-      // Parse grade
-      // -----------------------------------------------------
-
       let parsedGrade = grade;
-
       if (typeof grade === "string") {
         try {
-          parsedGrade =
-            JSON.parse(grade);
+          parsedGrade = JSON.parse(grade);
         } catch (error) {
           return res.status(400).json({
             success: false,
-            message:
-              "Invalid grade data.",
+            message: "Invalid grade data.",
           });
         }
       }
 
-      // -----------------------------------------------------
-      // Valid grade titles
-      // -----------------------------------------------------
-
-      const validGradeTitles = [
-        "cgpa",
-        "gpa",
-        "spi",
-        "percentage",
-      ];
-
-      // -----------------------------------------------------
-      // Grade title
-      // -----------------------------------------------------
-
-      if (
-        parsedGrade?.title !==
-        undefined
-      ) {
-        const gradeTitle =
-          parsedGrade.title
-            .toString()
-            .trim()
-            .toLowerCase();
-
-        if (
-          !validGradeTitles.includes(
-            gradeTitle
-          )
-        ) {
+      const validGradeTitles = ["cgpa", "gpa", "spi", "percentage"];
+      if (parsedGrade?.title !== undefined) {
+        const gradeTitle = parsedGrade.title.toString().trim().toLowerCase();
+        if (!validGradeTitles.includes(gradeTitle)) {
           return res.status(400).json({
             success: false,
-            message:
-              `Invalid grade title. Allowed: ${validGradeTitles.join(", ")}`,
+            message: `Invalid grade title. Allowed: ${validGradeTitles.join(", ")}`,
           });
         }
-
-        education.grade.title =
-          gradeTitle;
+        education.grade.title = gradeTitle;
       }
 
-      // -----------------------------------------------------
-      // Grade value
-      // -----------------------------------------------------
-
-      if (
-        parsedGrade?.value !==
-        undefined &&
-        parsedGrade?.value !== ""
-      ) {
-        const gradeValue =
-          Number(
-            parsedGrade.value
-          );
-
-        if (
-          Number.isNaN(
-            gradeValue
-          )
-        ) {
+      if (parsedGrade?.value !== undefined && parsedGrade?.value !== "") {
+        const gradeValue = Number(parsedGrade.value);
+        if (Number.isNaN(gradeValue)) {
           return res.status(400).json({
             success: false,
-            message:
-              "Grade value must be a number.",
+            message: "Grade value must be a number.",
           });
         }
-
-        education.grade.value =
-          gradeValue;
+        education.grade.value = gradeValue;
       }
     }
-
-    // =======================================================
-    // CURRENTLY STUDYING
-    // =======================================================
-    //
-    // Frontend sends:
-    //
-    // "true"
-    // "false"
-    //
-    // =======================================================
 
     let isCurrentlyStudying;
-
-    if (
-      currentlyStudying !==
-      undefined
-    ) {
+    if (currentlyStudying !== undefined) {
       isCurrentlyStudying =
-        currentlyStudying === true ||
-        currentlyStudying ===
-        "true";
-
-      education.currentlyStudying =
-        isCurrentlyStudying;
+        currentlyStudying === true || currentlyStudying === "true";
+      education.currentlyStudying = isCurrentlyStudying;
     } else {
-      // If old request does not send
-      // currentlyStudying, keep existing
-      // value.
-      isCurrentlyStudying =
-        education.currentlyStudying ===
-        true;
+      isCurrentlyStudying = education.currentlyStudying === true;
     }
 
-    // =======================================================
-    // PASSED YEAR LOGIC
-    // =======================================================
-    //
-    // If currently studying:
-    //
-    //     passedYear = null
-    //
-    // If not currently studying:
-    //
-    //     passedYear is required.
-    //
-    // =======================================================
-
     if (isCurrentlyStudying) {
-
-      // -----------------------------------------------------
-      // CURRENT STUDENT
-      // -----------------------------------------------------
-
       education.passedYear = null;
-
-    } else {
-
-      // -----------------------------------------------------
-      // COMPLETED STUDENT
-      // -----------------------------------------------------
-
+    } else if (passedYear !== undefined) {
       if (!passedYear) {
         return res.status(400).json({
           success: false,
-          message:
-            "Passed year is required when currently studying is unchecked.",
+          message: "Passed year is required when currently studying is unchecked.",
         });
       }
-
-      const newPassedYear =
-        new Date(passedYear);
-
-      if (
-        Number.isNaN(
-          newPassedYear.getTime()
-        )
-      ) {
+      const newPassedYear = new Date(passedYear);
+      if (Number.isNaN(newPassedYear.getTime())) {
         return res.status(400).json({
           success: false,
-          message:
-            "Invalid passed year.",
+          message: "Invalid passed year.",
         });
       }
-
-      education.passedYear =
-        newPassedYear;
+      education.passedYear = newPassedYear;
     }
 
-    // =======================================================
-    // UPDATE ADDRESS
-    // =======================================================
-
-    if (
-      address !== undefined
-    ) {
+    if (address !== undefined) {
       if (!address.trim()) {
         return res.status(400).json({
           success: false,
-          message:
-            "Address cannot be empty.",
+          message: "Address cannot be empty.",
         });
       }
-
-      education.address =
-        address.trim();
+      education.address = address.trim();
     }
 
-    // =======================================================
-    // UPDATE LOGO
-    // =======================================================
-
     let oldImageId = null;
-
     if (file) {
-
-      // -----------------------------------------------------
-      // Save old image ID
-      // -----------------------------------------------------
-
-      oldImageId =
-        education
-          .instituteLogo
-          ?.imageId || null;
-
-      // -----------------------------------------------------
-      // Upload new image
-      // -----------------------------------------------------
-
-      const result =
-        await uploadImage(file);
-
-      // -----------------------------------------------------
-      // Replace image
-      // -----------------------------------------------------
-
+      oldImageId = education.instituteLogo?.imageId || null;
+      const result = await uploadImage(file);
       education.instituteLogo = {
         url: result.url,
         imageId: result.fileId,
       };
     }
 
-    // =======================================================
-    // SAVE EDUCATION
-    // =======================================================
-
     await education.save();
 
-    // =======================================================
-    // DELETE OLD IMAGE
-    // =======================================================
-
     if (oldImageId) {
-      try {
-        await deleteImage(
-          oldImageId
-        );
-      } catch (imageError) {
-        console.error(
-          "Failed to delete old education logo:",
-          imageError
-        );
-
-        // Don't fail the entire update
-        // because database update succeeded.
-      }
+      await deleteImage(oldImageId).catch((imageError) =>
+        console.error("Failed to delete old education logo:", imageError)
+      );
     }
-
-    // =======================================================
-    // RESPONSE
-    // =======================================================
 
     return res.status(200).json({
       success: true,
-      message:
-        "Education updated successfully.",
+      message: "Education updated successfully.",
       education,
     });
-
   } catch (error) {
-
-    console.error(
-      "Failed to update education:",
-      error
-    );
-
+    console.error("Failed to update education:", error);
     return res.status(500).json({
       success: false,
-      message:
-        error.message ||
-        "Failed to update education.",
+      message: error.message || "Failed to update education.",
     });
   }
 };
 
-// =========================
-// Delete Education
-// =========================
-
 export const deleteEducation = async (req, res) => {
   try {
-
-    // =========================
-    // GET DATA
-    // =========================
-
-    const adminId =
-      req.admin?._id ||
-      req.admin?.id;
-
-    const { id: educationId } =
-      req.params;
-
-
-    // =========================
-    // CHECK EDUCATION ID
-    // =========================
+    const adminId = req.admin?._id || req.admin?.id;
+    const { id: educationId } = req.params;
 
     if (!educationId) {
       return res.status(400).json({
         success: false,
-        message:
-          "Please select education to delete."
+        message: "Please select education to delete.",
       });
     }
-
-
-    // =========================
-    // CHECK AUTHENTICATION
-    // =========================
 
     if (!adminId) {
       return res.status(401).json({
         success: false,
-        message:
-          "Please login first."
+        message: "Please login first.",
       });
     }
 
-
-    // =========================
-    // FIND ADMIN
-    // =========================
-
-    const admin =
-      await Admin.findById(adminId);
-
+    const admin = await Admin.findById(adminId);
     if (!admin) {
       return res.status(404).json({
         success: false,
-        message:
-          "Admin not found."
+        message: "Admin not found.",
       });
     }
 
-
-    // =========================
-    // CHECK OWNERSHIP
-    // =========================
-
-    const isEducationOwned =
-      admin.about?.education?.some(
-        (id) =>
-          id.toString() === educationId
-      );
+    const isEducationOwned = admin.about?.education?.some(
+      (id) => id.toString() === educationId
+    );
 
     if (!isEducationOwned) {
       return res.status(403).json({
         success: false,
-        message:
-          "You are not authorized to delete this education."
+        message: "You are not authorized to delete this education.",
       });
     }
 
-
-    // =========================
-    // FIND EDUCATION
-    // =========================
-
-    const education =
-      await Education.findById(
-        educationId
-      );
-
+    const education = await Education.findById(educationId);
     if (!education) {
       return res.status(404).json({
         success: false,
-        message:
-          "Education not found."
+        message: "Education not found.",
       });
     }
 
+    const oldImageId = education.instituteLogo?.imageId || null;
+    await Education.findByIdAndDelete(educationId);
 
-    // =========================
-    // SAVE IMAGE ID
-    // BEFORE DELETE
-    // =========================
-
-    const oldImageId =
-      education.instituteLogo?.imageId ||
-      null;
-
-
-    // =========================
-    // DELETE EDUCATION
-    // FROM MONGODB
-    // =========================
-
-    await Education.findByIdAndDelete(
-      educationId
-    );
-
-
-    // =========================
-    // REMOVE EDUCATION ID
-    // FROM ADMIN
-    // =========================
-
-    if (
-      Array.isArray(
-        admin.about?.education
-      )
-    ) {
-
-      admin.about.education =
-        admin.about.education.filter(
-          (id) =>
-            id.toString() !==
-            educationId
-        );
-
+    if (Array.isArray(admin.about?.education)) {
+      admin.about.education = admin.about.education.filter(
+        (id) => id.toString() !== educationId
+      );
       await admin.save();
     }
 
-
-    // =========================
-    // DELETE IMAGEKIT IMAGE
-    // =========================
-
     if (oldImageId) {
-
-      try {
-
-        await deleteImage(
-          oldImageId
-        );
-
-      } catch (imageError) {
-
-        console.error(
-          "Failed to delete education logo from ImageKit:",
-          imageError
-        );
-
-        /*
-            We don't return an error here
-            because the education itself
-            was successfully deleted.
-        */
-      }
+      await deleteImage(oldImageId).catch((imageError) =>
+        console.error("Failed to delete education logo from ImageKit:", imageError)
+      );
     }
-
-
-    // =========================
-    // RESPONSE
-    // =========================
 
     return res.status(200).json({
       success: true,
-      message:
-        "Education deleted successfully.",
-      deletedEducationId:
-        educationId
+      message: "Education deleted successfully.",
+      deletedEducationId: educationId,
     });
-
-
   } catch (error) {
-
-    console.error(
-      "Failed to delete education:",
-      error
-    );
-
+    console.error("Failed to delete education:", error);
     return res.status(500).json({
       success: false,
-      message:
-        "Failed to delete education."
+      message: "Failed to delete education.",
     });
   }
 };
+
+export const getEducations = async (req, res) => {
+  try {
+    const adminId = req?.admin?._id || req?.admin?.id;
+
+    if (!adminId) {
+      return res.status(401).json({
+        success: false,
+        message: "Please login first.",
+      });
+    }
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "You are not authorized.",
+      });
+    }
+
+    const educations = await Education.find({ user: admin._id });
+
+    return res.status(200).json({
+      success: true,
+      message: "Education Fetched Successfully.",
+      educations: educations || [],
+    });
+  } catch (error) {
+    console.error(`Failed to Fetch Education: ${error}`);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to Fetch Education.",
+    });
+  }
+};
+
+// ============================================================
+// CATEGORY CONTROLLERS
+// ============================================================
 
 export const addCategory = async (req, res) => {
   try {
     const adminId = req?.admin?._id || req?.admin?.id;
     const { name } = req.body;
     const categoryName = name?.trim().toLowerCase();
+
     if (!categoryName) {
       return res.status(400).json({
         success: false,
-        message: "Please Give Name to add Category."
-      })
+        message: "Please Give Name to add Category.",
+      });
     }
     if (!adminId) {
       return res.status(401).json({
         success: false,
-        message: "Please Login First."
-      })
+        message: "Please Login First.",
+      });
     }
+
     const admin = await Admin.findById(adminId);
     if (!admin) {
       return res.status(404).json({
         success: false,
-        message: "You Are not Authorized!"
-      })
+        message: "You Are not Authorized!",
+      });
     }
-    const categoryExists = await Category.findOne({ name: categoryName })
+
+    const categoryExists = await Category.findOne({
+      name: categoryName,
+      user: admin._id,
+    });
+
     if (categoryExists) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
-        message: "Category Already Exists."
-      })
+        message: "Category Already Exists.",
+      });
     }
+
     const category = await Category.create({
       name: categoryName,
-      user: admin._id
-    })
+      user: admin._id,
+    });
+
     return res.status(201).json({
       success: true,
       message: "Category Added Successfully...",
-      category
-    })
+      category,
+    });
   } catch (error) {
     console.error("Failed to Add Category:", error);
     return res.status(500).json({
@@ -1584,7 +1050,7 @@ export const addCategory = async (req, res) => {
       message: "Failed to Add Category.",
     });
   }
-}
+};
 
 export const findCategory = async (req, res) => {
   try {
@@ -1592,37 +1058,33 @@ export const findCategory = async (req, res) => {
     if (!adminId) {
       return res.status(401).json({
         success: false,
-        message: "Please Login First."
-      })
+        message: "Please Login First.",
+      });
     }
+
     const admin = await Admin.findById(adminId);
     if (!admin) {
       return res.status(404).json({
         success: false,
-        message: "You Are not Authorized!"
-      })
+        message: "You Are not Authorized!",
+      });
     }
+
     const categories = await Category.find({ user: admin._id });
-    if (!categories) {
-      return res.json({
-        success: false,
-        message: "No Categories Found."
-      })
-    }
+
     return res.status(200).json({
       success: true,
       message: "Category Fetched Successfully.",
-      categories
-    })
+      categories: categories || [],
+    });
   } catch (error) {
     console.error("Failed to Fetch Categories:", error);
-
     return res.status(500).json({
       success: false,
       message: "Failed to Fetch Categories.",
     });
   }
-}
+};
 
 export const deleteCategory = async (req, res) => {
   try {
@@ -1651,7 +1113,6 @@ export const deleteCategory = async (req, res) => {
       });
     }
 
-    // Only delete category owned by this admin
     const category = await Category.findOneAndDelete({
       _id: id,
       user: admin._id,
@@ -1664,7 +1125,6 @@ export const deleteCategory = async (req, res) => {
       });
     }
 
-    // Find skills linked to this category (for this admin)
     const skillsToDelete = await Skills.find({
       category: id,
       user: admin._id,
@@ -1672,28 +1132,24 @@ export const deleteCategory = async (req, res) => {
 
     const skillIds = skillsToDelete.map((s) => s._id);
 
-    // Delete skill images from ImageKit
     for (const skill of skillsToDelete) {
       if (skill.technology?.imageId) {
-        try {
-          await deleteImage(skill.technology.imageId);
-        } catch (imageError) {
-          console.error("Failed to delete skill image:", imageError);
-        }
+        await deleteImage(skill.technology.imageId).catch((imageError) =>
+          console.error("Failed to delete skill image:", imageError)
+        );
       }
     }
 
-    // Delete skills from DB
     if (skillIds.length > 0) {
       await Skills.deleteMany({
         _id: { $in: skillIds },
         user: admin._id,
       });
 
-      // Remove skill refs from admin.about.skills
       if (Array.isArray(admin.about?.skills)) {
         admin.about.skills = admin.about.skills.filter(
-          (skillId) => !skillIds.some((id) => id.toString() === skillId.toString())
+          (skillId) =>
+            !skillIds.some((sId) => sId.toString() === skillId.toString())
         );
         await admin.save();
       }
@@ -1713,14 +1169,17 @@ export const deleteCategory = async (req, res) => {
   }
 };
 
-export const getEducations = async (req, res) => {
-  try {
-    const adminId = req?.admin?._id || req?.admin?.id;
+// ============================================================
+// EXPERIENCE CONTROLLERS
+// ============================================================
 
+export const getExperience = async (req, res) => {
+  try {
+    const adminId = req?.admin?.id || req?.admin?._id;
     if (!adminId) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
-        message: "Please login first.",
+        message: "Please Login First.",
       });
     }
 
@@ -1728,65 +1187,18 @@ export const getEducations = async (req, res) => {
     if (!admin) {
       return res.status(404).json({
         success: false,
-        message: "You are not authorized.",
+        message: "You are Not Authorized.",
       });
     }
-    const educations = await Education.find({ user: admin._id })
-    if (!educations.length > 0) {
-      return res.json({
-        success: false,
-        message: "No Education Found."
-      })
-    }
-    return res.status(200).json({
-      success: true,
-      message: "Education Fetch Successfully.",
-      educations: educations
-    })
-  } catch (error) {
-    console.log(`Failed to Fetch Education: ${error}`)
-    return res.status(500).json({
-      success: false,
-      message: "Failed to Fetch Education."
-    })
-  }
-}
 
-
-// Experience Controllers.
-
-// ============================================================
-// GET ALL EXPERIENCES
-// GET /api/admin/experience
-// ============================================================
-export const getExperience = async (req, res) => {
-  try {
-    const adminId = req?.admin?.id || req?.admin?._id;
-    if (!adminId) {
-      return res.status(400).json({
-        success: false,
-        message: "Please Login First."
-      })
-    }
-    const admin = await Admin.findById(adminId);
-    if (!admin) {
-      return res.status(400).json({
-        success: false,
-        message: "You are Not Authorized."
-      })
-    }
-    const experiences = await Experience.find({user: admin._id}).sort({ createdAt: 1 });
-    if (!experiences) {
-      return res.json({
-        success: false,
-        message: "Experiences Not Found."
-      })
-    }
+    const experiences = await Experience.find({ user: admin._id }).sort({
+      createdAt: 1,
+    });
 
     return res.status(200).json({
       success: true,
       count: experiences.length,
-      experiences: experiences,
+      experiences: experiences || [],
     });
   } catch (error) {
     console.error("Get Experience Error:", error);
@@ -1797,10 +1209,6 @@ export const getExperience = async (req, res) => {
   }
 };
 
-// ============================================================
-// ADD EXPERIENCE
-// POST /api/admin/experience/add
-// ============================================================
 export const addExperience = async (req, res) => {
   try {
     const {
@@ -1815,21 +1223,21 @@ export const addExperience = async (req, res) => {
 
     const adminId = req?.admin?.id || req?.admin?._id;
 
-    if(!adminId){
+    if (!adminId) {
       return res.status(400).json({
         success: false,
-        message: "Please Login First."
-      })
-    }
-    const admin = await Admin.findById(adminId)
-    if(!admin){
-      return res.status(404).json({
-        success: false,
-        message: "You Are not Authorized."
-      })
+        message: "Please Login First.",
+      });
     }
 
-    // Validation
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "You Are not Authorized.",
+      });
+    }
+
     if (!companyName?.trim()) {
       return res.status(400).json({
         success: false,
@@ -1868,7 +1276,6 @@ export const addExperience = async (req, res) => {
       });
     }
 
-    // Process logo upload with ImageKit
     let companyLogo = {
       imageId: "",
       url: "",
@@ -1880,7 +1287,6 @@ export const addExperience = async (req, res) => {
       companyLogo.url = result.url;
     }
 
-    // Parse work points array
     const points = parseWorkPoints(work);
 
     const newExperience = await Experience.create({
@@ -1892,12 +1298,12 @@ export const addExperience = async (req, res) => {
       companyLocation: companyLocation.trim(),
       work: { points },
       companyLogo,
-      user: admin?._id || null,
+      user: admin._id,
     });
 
-    // set to admin schema.
-    admin?.about?.experience?.push(newExperience._id)
-
+    if (!admin.about) admin.about = {};
+    if (!Array.isArray(admin.about.experience)) admin.about.experience = [];
+    admin.about.experience.push(newExperience._id);
     await admin.save();
 
     return res.status(201).json({
@@ -1907,12 +1313,9 @@ export const addExperience = async (req, res) => {
     });
   } catch (error) {
     console.error("Add Experience Error:", error);
-
-    // Clean temp file if an error occurred mid-upload
     if (req.file?.path && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
-
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to add experience.",
@@ -1920,36 +1323,38 @@ export const addExperience = async (req, res) => {
   }
 };
 
-// ============================================================
-// UPDATE EXPERIENCE
-// PUT /api/admin/experience/:id/update
-// ============================================================
 export const updateExperience = async (req, res) => {
   try {
     const adminId = req?.admin?.id || req?.admin?._id;
     const { id } = req.params;
-    if(!id){
+
+    if (!id) {
       return res.status(400).json({
         success: false,
-        message: "Please Select Experience to Delete."
-      })
+        message: "Please Select Experience to Update.",
+      });
     }
 
-    if(!adminId){
+    if (!adminId) {
       return res.status(400).json({
         success: false,
-        message: "Please Login First."
-      })
+        message: "Please Login First.",
+      });
     }
-    const admin = await Admin.findById(adminId)
-    if(!admin){
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
       return res.status(404).json({
         success: false,
-        message: "You Are not Authorized."
-      })
+        message: "You Are not Authorized.",
+      });
     }
 
-    const existingExperience = await Experience.findOne({_id: id, user: admin._id});
+    const existingExperience = await Experience.findOne({
+      _id: id,
+      user: admin._id,
+    });
+
     if (!existingExperience) {
       return res.status(404).json({
         success: false,
@@ -1998,20 +1403,23 @@ export const updateExperience = async (req, res) => {
       });
     }
 
-    // Handle new logo upload & delete old file from ImageKit
     let companyLogo = existingExperience.companyLogo;
 
     if (req.file) {
       if (existingExperience.companyLogo?.imageId) {
-        await deleteImage(existingExperience.companyLogo.imageId)
+        await deleteImage(existingExperience.companyLogo.imageId).catch((err) =>
+          console.warn("Could not delete old company logo:", err)
+        );
       }
-
-      companyLogo = await uploadImage(req.file);
+      const uploaded = await uploadImage(req.file);
+      companyLogo = {
+        imageId: uploaded.fileId,
+        url: uploaded.url,
+      };
     }
 
     const points = parseWorkPoints(work);
 
-    // Apply updates
     existingExperience.companyName = companyName.trim();
     existingExperience.designation = designation.trim();
     existingExperience.joiningDate = joiningDate;
@@ -2030,11 +1438,9 @@ export const updateExperience = async (req, res) => {
     });
   } catch (error) {
     console.error("Update Experience Error:", error);
-
     if (req.file?.path && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
-
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to update experience.",
@@ -2042,30 +1448,27 @@ export const updateExperience = async (req, res) => {
   }
 };
 
-// ============================================================
-// DELETE EXPERIENCE
-// DELETE /api/admin/experience/:id/delete
-// ============================================================
 export const deleteExperience = async (req, res) => {
   try {
     const { id } = req.params;
     const adminId = req?.admin?.id || req?.admin?._id;
 
-    if(!adminId){
+    if (!adminId) {
       return res.status(400).json({
         success: false,
-        message: "Please Login First."
-      })
-    }
-    const admin = await Admin.findById(adminId)
-    if(!admin){
-      return res.status(404).json({
-        success: false,
-        message: "You Are not Authorized."
-      })
+        message: "Please Login First.",
+      });
     }
 
-    const experience = await Experience.findById(id);
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "You Are not Authorized.",
+      });
+    }
+
+    const experience = await Experience.findOne({ _id: id, user: admin._id });
     if (!experience) {
       return res.status(404).json({
         success: false,
@@ -2073,12 +1476,19 @@ export const deleteExperience = async (req, res) => {
       });
     }
 
-    // Delete logo from ImageKit using its fileId
     if (experience.companyLogo?.imageId) {
-      await deleteImage(experience.companyLogo.imageId)
+      await deleteImage(experience.companyLogo.imageId).catch((err) =>
+        console.warn("Failed to delete experience logo:", err)
+      );
     }
-    admin.about.experience = admin.about.experience.filter((experienceid)=>experienceid.toString() !== id)
-    await admin.save()
+
+    if (Array.isArray(admin.about?.experience)) {
+      admin.about.experience = admin.about.experience.filter(
+        (expId) => expId.toString() !== id
+      );
+      await admin.save();
+    }
+
     await Experience.findByIdAndDelete(id);
 
     return res.status(200).json({
@@ -2094,14 +1504,10 @@ export const deleteExperience = async (req, res) => {
   }
 };
 
-
-
-// Project Controllers.
-
 // ============================================================
-// GET ALL PROJECTS
-// GET /api/admin/projects
+// PROJECT CONTROLLERS
 // ============================================================
+
 export const getProjects = async (req, res) => {
   try {
     const adminId = req?.admin?.id || req?.admin?._id;
@@ -2121,7 +1527,6 @@ export const getProjects = async (req, res) => {
       });
     }
 
-    // Populated techStack references
     const projects = await Project.find({ user: admin._id })
       .populate("techStack")
       .sort({ createdAt: 1 });
@@ -2129,7 +1534,7 @@ export const getProjects = async (req, res) => {
     return res.status(200).json({
       success: true,
       count: projects.length,
-      projects,
+      projects: projects || [],
     });
   } catch (error) {
     console.error("Get Projects Error:", error);
@@ -2140,10 +1545,6 @@ export const getProjects = async (req, res) => {
   }
 };
 
-// ============================================================
-// GET SINGLE PROJECT
-// GET /api/admin/projects/:id
-// ============================================================
 export const getProjectById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -2164,8 +1565,9 @@ export const getProjectById = async (req, res) => {
       });
     }
 
-    // Populated techStack references for view more page
-    const project = await Project.findOne({ _id: id, user: admin._id }).populate("techStack");
+    const project = await Project.findOne({ _id: id, user: admin._id }).populate(
+      "techStack"
+    );
 
     if (!project) {
       return res.status(404).json({
@@ -2187,14 +1589,9 @@ export const getProjectById = async (req, res) => {
   }
 };
 
-// ============================================================
-// ADD PROJECT
-// POST /api/admin/projects/add
-// ============================================================
 export const addProject = async (req, res) => {
   try {
     const adminId = req?.admin?._id || req?.admin?.id;
-
     const {
       name,
       shortdesc,
@@ -2241,11 +1638,7 @@ export const addProject = async (req, res) => {
       });
     }
 
-    let image = {
-      imageId: "",
-      url: "",
-    };
-
+    let image = { imageId: "", url: "" };
     if (req.file) {
       const result = await uploadImage(req.file);
       image = {
@@ -2274,7 +1667,9 @@ export const addProject = async (req, res) => {
     admin.about.projects.push(newProject._id);
     await admin.save();
 
-    const populatedProject = await Project.findById(newProject._id).populate("techStack");
+    const populatedProject = await Project.findById(newProject._id).populate(
+      "techStack"
+    );
 
     return res.status(201).json({
       success: true,
@@ -2283,11 +1678,9 @@ export const addProject = async (req, res) => {
     });
   } catch (error) {
     console.error("Add Project Error:", error);
-
     if (req.file?.path && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
-
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to add project.",
@@ -2295,10 +1688,6 @@ export const addProject = async (req, res) => {
   }
 };
 
-// ============================================================
-// UPDATE PROJECT
-// PUT /api/admin/projects/:id/update
-// ============================================================
 export const updateProject = async (req, res) => {
   try {
     const { id } = req.params;
@@ -2359,10 +1748,11 @@ export const updateProject = async (req, res) => {
     }
 
     let image = existingProject.image;
-
     if (req.file) {
       if (existingProject.image?.imageId) {
-        await deleteImage(existingProject.image.imageId);
+        await deleteImage(existingProject.image.imageId).catch((err) =>
+          console.warn("Failed to delete previous project image:", err)
+        );
       }
       const result = await uploadImage(req.file);
       image = {
@@ -2388,7 +1778,9 @@ export const updateProject = async (req, res) => {
 
     await existingProject.save();
 
-    const populatedProject = await Project.findById(existingProject._id).populate("techStack");
+    const populatedProject = await Project.findById(existingProject._id).populate(
+      "techStack"
+    );
 
     return res.status(200).json({
       success: true,
@@ -2397,11 +1789,9 @@ export const updateProject = async (req, res) => {
     });
   } catch (error) {
     console.error("Update Project Error:", error);
-
     if (req.file?.path && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
-
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to update project.",
@@ -2409,10 +1799,6 @@ export const updateProject = async (req, res) => {
   }
 };
 
-// ============================================================
-// DELETE PROJECT
-// DELETE /api/admin/projects/:id/delete
-// ============================================================
 export const deleteProject = async (req, res) => {
   try {
     const { id } = req.params;
@@ -2442,10 +1828,11 @@ export const deleteProject = async (req, res) => {
     }
 
     if (project.image?.imageId) {
-      await deleteImage(project.image.imageId);
+      await deleteImage(project.image.imageId).catch((err) =>
+        console.warn("Failed to delete project image:", err)
+      );
     }
 
-    // Fixed: Do not use optional chaining on assignment target
     if (Array.isArray(admin.about?.projects)) {
       admin.about.projects = admin.about.projects.filter(
         (projectid) => projectid.toString() !== id
@@ -2468,18 +1855,13 @@ export const deleteProject = async (req, res) => {
   }
 };
 
-
-
-
-
 // ============================================================
-// GET LOGGED-IN USER'S TECH STACKS
-// GET /api/admin/techstack
+// TECH STACK CONTROLLERS
 // ============================================================
+
 export const getTechStacks = async (req, res) => {
   try {
     const adminId = req.admin?._id || req.admin?.id;
-
     if (!adminId) {
       return res.status(401).json({
         success: false,
@@ -2495,12 +1877,14 @@ export const getTechStacks = async (req, res) => {
       });
     }
 
-    const techStacks = await TechStack.find({ user: admin._id }).sort({ name: 1 });
+    const techStacks = await TechStack.find({ user: admin._id }).sort({
+      name: 1,
+    });
 
     return res.status(200).json({
       success: true,
       count: techStacks.length,
-      techStacks,
+      techStacks: techStacks || [],
     });
   } catch (error) {
     console.error("Get TechStack Error:", error);
@@ -2511,14 +1895,9 @@ export const getTechStacks = async (req, res) => {
   }
 };
 
-// ============================================================
-// ADD TECH STACK FOR USER
-// POST /api/admin/techstack/add
-// ============================================================
 export const addTechStack = async (req, res) => {
   try {
     const adminId = req.admin?._id || req.admin?.id;
-
     if (!adminId) {
       return res.status(401).json({
         success: false,
@@ -2535,7 +1914,6 @@ export const addTechStack = async (req, res) => {
     }
 
     const { name, iconUrl } = req.body || {};
-
     if (!name?.trim()) {
       return res.status(400).json({
         success: false,
@@ -2543,7 +1921,6 @@ export const addTechStack = async (req, res) => {
       });
     }
 
-    // Check duplicate name ONLY for this user
     const existing = await TechStack.findOne({
       user: admin._id,
       name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
@@ -2557,7 +1934,6 @@ export const addTechStack = async (req, res) => {
     }
 
     let icon = { imageId: "", url: "" };
-
     if (req.file) {
       icon = await uploadImage(req.file);
     } else if (iconUrl?.trim()) {
@@ -2590,10 +1966,6 @@ export const addTechStack = async (req, res) => {
   }
 };
 
-// ============================================================
-// UPDATE USER'S TECH STACK
-// PUT /api/admin/techstack/:id/update
-// ============================================================
 export const updateTechStack = async (req, res) => {
   try {
     const adminId = req.admin?._id || req.admin?.id;
@@ -2642,12 +2014,16 @@ export const updateTechStack = async (req, res) => {
 
     if (req.file) {
       if (tech.icon?.imageId) {
-        await deleteImage(tech.icon.imageId);
+        await deleteImage(tech.icon.imageId).catch((err) =>
+          console.warn("Failed to remove old techstack image:", err)
+        );
       }
       tech.icon = await uploadImage(req.file);
     } else if (iconUrl !== undefined && iconUrl.trim() !== "") {
       if (tech.icon?.imageId) {
-        await deleteImage(tech.icon.imageId);
+        await deleteImage(tech.icon.imageId).catch((err) =>
+          console.warn("Failed to remove old techstack image:", err)
+        );
       }
       tech.icon = {
         imageId: "",
@@ -2674,10 +2050,6 @@ export const updateTechStack = async (req, res) => {
   }
 };
 
-// ============================================================
-// DELETE USER'S TECH STACK (WITH SCOPED CASCADE)
-// DELETE /api/admin/techstack/:id/delete
-// ============================================================
 export const deleteTechStack = async (req, res) => {
   try {
     const adminId = req.admin?._id || req.admin?.id;
@@ -2706,18 +2078,17 @@ export const deleteTechStack = async (req, res) => {
       });
     }
 
-    // 1. Delete image asset from storage
     if (tech.icon?.imageId) {
-      await deleteImage(tech.icon.imageId);
+      await deleteImage(tech.icon.imageId).catch((err) =>
+        console.warn("Failed to delete tech stack icon:", err)
+      );
     }
 
-    // 2. Cascade delete: Pull this tech stack reference from user's projects
     await Project.updateMany(
       { user: admin._id, techStack: id },
       { $pull: { techStack: id } }
     );
 
-    // 3. Delete document
     await TechStack.findByIdAndDelete(id);
 
     return res.status(200).json({
@@ -2733,42 +2104,52 @@ export const deleteTechStack = async (req, res) => {
   }
 };
 
+// ============================================================
+// ABOUT & PROFILE CONTROLLERS
+// ============================================================
 
-
-
-
-
-// About Section.
-// PUT /api/admin/profile/about-info
 export const updateAboutInfo = async (req, res) => {
   try {
     const adminId = req.admin?._id || req.admin?.id;
-    const { name, aboutDesc, address, mobileNo } = req.body;
+    const { name, aboutDesc, address, mobileNo, shortDesc } = req.body;
 
     const admin = await Admin.findById(adminId);
-    if (!admin) return res.status(404).json({ success: false, message: "Admin not found" });
+    if (!admin)
+      return res.status(404).json({ success: false, message: "Admin not found" });
 
     if (name?.trim()) admin.name = name.trim();
     if (!admin.about) admin.about = {};
+
     admin.about.aboutDesc = aboutDesc || "";
     admin.about.address = address || "";
     admin.about.mobileNo = mobileNo || "";
+    admin.about.shortDescription = shortDesc || "";
 
     await admin.save();
-    return res.status(200).json({ success: true, message: "Profile updated", admin });
+    return res
+      .status(200)
+      .json({ success: true, message: "Profile updated", admin });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// POST /api/admin/hobbies/add
 export const addHobby = async (req, res) => {
   try {
     const adminId = req.admin?._id || req.admin?.id;
     const { name } = req.body;
 
+    if (!name?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Hobby name is required.",
+      });
+    }
+
     const hobby = await Hobbies.create({ name: name.trim() });
-    await Admin.findByIdAndUpdate(adminId, { $push: { "about.hobbies": hobby._id } });
+    await Admin.findByIdAndUpdate(adminId, {
+      $push: { "about.hobbies": hobby._id },
+    });
 
     return res.status(201).json({ success: true, hobby });
   } catch (err) {
@@ -2776,14 +2157,15 @@ export const addHobby = async (req, res) => {
   }
 };
 
-// DELETE /api/admin/hobbies/:id/delete
 export const deleteHobby = async (req, res) => {
   try {
     const adminId = req.admin?._id || req.admin?.id;
     const { id } = req.params;
 
     await Hobbies.findByIdAndDelete(id);
-    await Admin.findByIdAndUpdate(adminId, { $pull: { "about.hobbies": id } });
+    await Admin.findByIdAndUpdate(adminId, {
+      $pull: { "about.hobbies": id },
+    });
 
     return res.status(200).json({ success: true, message: "Hobby deleted" });
   } catch (err) {
@@ -2791,7 +2173,6 @@ export const deleteHobby = async (req, res) => {
   }
 };
 
-// POST /api/admin/socials/add
 export const addSocialProfile = async (req, res) => {
   try {
     const adminId = req.admin?._id || req.admin?.id;
@@ -2813,7 +2194,6 @@ export const addSocialProfile = async (req, res) => {
 
     let finalImageUrl = platformImageUrl?.trim() || "";
 
-    // If user uploaded a physical icon file
     if (req.file) {
       const result = await uploadImage(req.file);
       finalImageUrl = result.url;
@@ -2846,14 +2226,15 @@ export const addSocialProfile = async (req, res) => {
   }
 };
 
-// DELETE /api/admin/socials/:id/delete
 export const deleteSocialProfile = async (req, res) => {
   try {
     const adminId = req.admin?._id || req.admin?.id;
     const { id } = req.params;
 
     await socialProfiles.findByIdAndDelete(id);
-    await Admin.findByIdAndUpdate(adminId, { $pull: { "about.socialProfiles": id } });
+    await Admin.findByIdAndUpdate(adminId, {
+      $pull: { "about.socialProfiles": id },
+    });
 
     return res.status(200).json({ success: true, message: "Social deleted" });
   } catch (err) {
@@ -2862,9 +2243,10 @@ export const deleteSocialProfile = async (req, res) => {
 };
 
 // ============================================================
-// GET CURRENT ADMIN PROFILE
+// GET CURRENT ADMIN PROFILE (DEEP POPULATE)
 // GET /api/admin/me
 // ============================================================
+// GET /api/admin/me
 export const getAdminProfile = async (req, res) => {
   try {
     const adminId = req.admin?._id || req.admin?.id;
@@ -2877,6 +2259,16 @@ export const getAdminProfile = async (req, res) => {
     }
 
     const admin = await Admin.findById(adminId)
+      .populate("about.skills")
+      .populate("about.experience")
+      .populate("about.education")
+      .populate({
+        path: "about.projects",
+        populate: {
+          path: "techStack",
+          model: "TechStack", // Ensures TechStack model is explicitly dereferenced
+        },
+      })
       .populate("about.hobbies")
       .populate("about.socialProfiles");
 
@@ -2887,15 +2279,540 @@ export const getAdminProfile = async (req, res) => {
       });
     }
 
+    // Direct fallback with deep population
+    let projects = admin.about?.projects || [];
+    if (
+      projects.length === 0 ||
+      (projects[0] && !projects[0]?.name) // In case IDs failed to populate
+    ) {
+      projects = await Project.find({ user: admin._id }).populate({
+        path: "techStack",
+        model: "TechStack",
+      });
+    }
+
     return res.status(200).json({
       success: true,
-      admin,
+      admin: {
+        ...admin.toObject(),
+        about: {
+          ...admin.about?.toObject(),
+          projects,
+        },
+      },
     });
   } catch (error) {
     console.error("Get Admin Profile Error:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to fetch admin profile.",
+    });
+  }
+};
+
+// ============================================================
+// NOTIFICATIONS & EMAIL
+// ============================================================
+
+export const generateReadNotificationEmail = ({
+  userName,
+  adminName,
+  userMessage,
+}) => {
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Message Received</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #18181b;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f4f4f5; padding: 40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; background-color: #ffffff; border: 1px solid #e4e4e7; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
+          
+          <!-- Header Bar -->
+          <tr>
+            <td style="padding: 32px 32px 24px 32px; border-bottom: 1px solid #f4f4f5;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <span style="display: inline-block; background-color: #18181b; color: #ffffff; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 10px; border-radius: 6px;">
+                      Portfolio Update
+                    </span>
+                    <h1 style="margin: 16px 0 0 0; font-size: 22px; font-weight: 700; color: #18181b; letter-spacing: -0.02em;">
+                      Message Seen_
+                    </h1>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Content Body -->
+          <tr>
+            <td style="padding: 28px 32px;">
+              <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 24px; color: #3f3f46;">
+                Hi <strong style="color: #18181b;">${userName || "there"}</strong>,
+              </p>
+              
+              <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 24px; color: #3f3f46;">
+                <strong style="color: #18181b;">${adminName}</strong> has reviewed your message and will get back to you shortly.
+              </p>
+
+              ${
+                userMessage
+                  ? `
+              <!-- User Message Preview Box -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #fafafa; border: 1px solid #e4e4e7; border-left: 3px solid #18181b; border-radius: 8px; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 16px 20px;">
+                    <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a;">
+                      Your Message
+                    </p>
+                    <p style="margin: 0; font-size: 13px; line-height: 20px; color: #52525b; font-style: italic;">
+                      "${userMessage}"
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              `
+                  : ""
+              }
+
+              <!-- Status Badge Card -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f4f4f5; border-radius: 10px; padding: 14px 18px;">
+                <tr>
+                  <td width="24" valign="middle">
+                    <div style="width: 10px; height: 10px; background-color: #10b981; border-radius: 50%;"></div>
+                  </td>
+                  <td valign="middle">
+                    <p style="margin: 0; font-size: 13px; font-weight: 600; color: #27272a;">
+                      Status: Read & Queued for Response
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin: 28px 0 0 0; font-size: 14px; line-height: 22px; color: #71717a;">
+                Best regards,<br>
+                <strong style="color: #18181b;">${adminName}</strong>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 20px 32px; background-color: #fafafa; border-top: 1px solid #f4f4f5; text-align: center;">
+              <p style="margin: 0; font-size: 12px; color: #a1a1aa; line-height: 18px;">
+                This is an automated notification from ${adminName}'s Portfolio. Please do not reply directly to this email.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+};
+
+export const getNotifications = async (req, res) => {
+  try {
+    const adminId = req?.admin?.id || req?.admin?._id;
+    if (!adminId) {
+      return res.status(400).json({
+        success: false,
+        message: "Please Login First.",
+      });
+    }
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "You are not Authorized.",
+      });
+    }
+    const notifications = await Contact.find().sort({ createdAt: -1 });
+    return res.status(200).json({
+      success: true,
+      message: "Notification Fetched Successfully.",
+      notifications: notifications || [],
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to Fetch Notifications.",
+    });
+  }
+};
+
+export const markAsReadNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Please Select Message to Mark as Read.",
+      });
+    }
+
+    const adminId = req?.admin?.id || req?.admin?._id;
+    if (!adminId) {
+      return res.status(400).json({
+        success: false,
+        message: "Please Login First.",
+      });
+    }
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "You are not Authorized.",
+      });
+    }
+
+    const notification = await Contact.findById(id);
+    if (!notification) {
+      return res.status(404).json({
+        success: false,
+        message: "Notification Not Found...",
+      });
+    }
+
+    notification.showedMessage = true;
+    await notification.save();
+
+    const html = generateReadNotificationEmail({
+      userName: notification?.name,
+      userMessage: notification?.message,
+      adminName: admin?.name,
+    });
+
+    await sendMail({
+      email: notification?.email,
+      html,
+      text: "Confirmation Email.",
+      subject: "Confirmation Email.",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Update Status...",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to Update Status.",
+    });
+  }
+};
+
+export const markAllAsReadNotification = async (req, res) => {
+  try {
+    const adminId = req?.admin?.id || req?.admin?._id;
+    if (!adminId) {
+      return res.status(400).json({
+        success: false,
+        message: "Please Login First.",
+      });
+    }
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "You are not Authorized.",
+      });
+    }
+
+    const unreadMessages = await Contact.find({ showedMessage: false });
+
+    await Contact.updateMany(
+      { showedMessage: false },
+      { $set: { showedMessage: true } }
+    );
+
+    // Send emails in parallel safely using Promise.all
+    await Promise.all(
+      unreadMessages.map((notification) => {
+        const html = generateReadNotificationEmail({
+          userName: notification?.name,
+          userMessage: notification?.message,
+          adminName: admin?.name,
+        });
+        return sendMail({
+          email: notification?.email,
+          html,
+          text: "Confirmation Email.",
+          subject: "Confirmation Email.",
+        }).catch((err) => console.warn("Failed to send read receipt:", err));
+      })
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Marked all Message as Read.",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to Update Status of all messages.",
+    });
+  }
+};
+
+export const deleteNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Please Select Message to Delete.",
+      });
+    }
+
+    const adminId = req?.admin?.id || req?.admin?._id;
+    if (!adminId) {
+      return res.status(400).json({
+        success: false,
+        message: "Please Login First.",
+      });
+    }
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "You are not Authorized.",
+      });
+    }
+
+    await Contact.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Message Deleted Successfully...",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to Delete Message.",
+    });
+  }
+};
+
+export const replyNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { message } = req.body;
+
+    if (!message?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Please write a message to reply.",
+      });
+    }
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Please Select Message to Reply.",
+      });
+    }
+
+    const adminId = req?.admin?.id || req?.admin?._id;
+    if (!adminId) {
+      return res.status(400).json({
+        success: false,
+        message: "Please Login First.",
+      });
+    }
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "You are not Authorized.",
+      });
+    }
+
+    const notification = await Contact.findById(id);
+    if (!notification) {
+      return res.status(404).json({
+        success: false,
+        message: "Notification not Found.",
+      });
+    }
+
+    notification.answer = message.trim();
+    notification.showedMessage = true;
+    await notification.save();
+
+    const emailHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; color: #1f2937;">
+        <h2 style="font-size: 20px; font-weight: 700; color: #111827; margin-top: 0;">
+          Response from ${admin?.name}
+        </h2>
+        
+        <p style="font-size: 14px; line-height: 22px; color: #374151;">
+          Hi <strong>${notification?.name || "there"}</strong>,
+        </p>
+
+        <p style="font-size: 14px; line-height: 24px; color: #111827; margin: 16px 0;">
+          ${message.trim()}
+        </p>
+
+        <!-- User Original Message Reference -->
+        <div style="margin-top: 24px; padding: 14px 18px; background-color: #f3f4f6; border-left: 4px solid #111827; border-radius: 6px;">
+          <p style="margin: 0 0 4px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: #6b7280;">
+            Your Original Message:
+          </p>
+          <p style="margin: 0; font-size: 13px; line-height: 20px; color: #4b5563; font-style: italic;">
+            "${notification?.message}"
+          </p>
+        </div>
+
+        <p style="margin-top: 28px; font-size: 13px; color: #6b7280;">
+          Best regards,<br>
+          <strong style="color: #111827;">${admin?.name}</strong>
+        </p>
+      </div>
+    `;
+
+    await sendMail({
+      email: notification.email,
+      html: emailHtml,
+      text: message.trim(),
+      subject: `Response regarding your message: Re: ${admin?.name}'s Portfolio`,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Reply Sent Successfully.",
+    });
+  } catch (error) {
+    console.error("Failed to reply to notification:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to Reply.",
+    });
+  }
+};
+
+// ============================================================
+// RESUME CONTROLLERS
+// ============================================================
+
+// Update in-line resume details (scoped to logged-in admin + proper dot notation)
+export const updateResumeDetails = async (req, res) => {
+  try {
+    const adminId = req.admin?._id || req.admin?.id;
+    if (!adminId) {
+      return res.status(401).json({
+        success: false,
+        message: "Please login first.",
+      });
+    }
+
+    const { name, title, email, phone, location, bio } = req.body;
+    const updateQuery = {};
+
+    if (name !== undefined) updateQuery["name"] = name.trim();
+    if (email !== undefined) updateQuery["email"] = email.trim();
+    if (phone !== undefined) updateQuery["about.mobileNo"] = phone.trim();
+    if (location !== undefined) updateQuery["about.address"] = location.trim();
+    if (bio !== undefined) updateQuery["about.aboutDesc"] = bio.trim();
+    if (title !== undefined) updateQuery["about.shortDescription"] = title.trim();
+
+    const updated = await Admin.findByIdAndUpdate(
+      adminId,
+      { $set: updateQuery },
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin profile not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Resume details saved successfully.",
+      admin: updated,
+    });
+  } catch (err) {
+    console.error("Failed to update resume details:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Save published resume image URL/base64 to ImageKit
+export const publishResumeImage = async (req, res) => {
+  try {
+    const adminId = req.admin?._id || req.admin?.id;
+    if (!adminId) {
+      return res.status(401).json({
+        success: false,
+        message: "Please login first.",
+      });
+    }
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin not found.",
+      });
+    }
+
+    const fileToUpload = req.file || req.body.imageBase64;
+
+    if (!fileToUpload) {
+      return res.status(400).json({
+        success: false,
+        message: "No resume image data provided.",
+      });
+    }
+
+    // 1. Delete previous resume screenshot from ImageKit if it exists
+    const existingFileId = admin.resume?.fileId || admin.resume?.imageId;
+    if (existingFileId) {
+      await deleteImage(existingFileId).catch((err) =>
+        console.warn("Could not delete old resume from ImageKit:", err.message)
+      );
+    }
+
+    // 2. Upload to ImageKit under the resume subfolder
+    const uploadResponse = await uploadImage(fileToUpload, "/Portfolio_Admin/Resume");
+
+    // 3. Update Admin schema
+    admin.resume = {
+      fileId: uploadResponse.fileId,
+      imageId: uploadResponse.fileId,
+      url: uploadResponse.url,
+      updatedAt: new Date(),
+    };
+
+    await admin.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Resume snapshot published to ImageKit successfully!",
+      resume: admin.resume,
+    });
+  } catch (error) {
+    console.error("Failed to publish resume snapshot:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Failed to publish resume snapshot.",
     });
   }
 };

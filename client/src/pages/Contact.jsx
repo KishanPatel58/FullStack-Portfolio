@@ -6,12 +6,13 @@ import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { RiGithubLine, RiLinkedinBoxLine } from '@remixicon/react';
 import GridCanvas from '../components/ui/GridCanvas';
+import api from '../api/axios';
 
 const Contact = () => {
   const { Profile } = UseMyContext();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [description, setDescription] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [socialHoverLink, setSocialHoverLink] = useState(null);
 
@@ -33,10 +34,23 @@ const Contact = () => {
   const handleContact = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      toast.success("Your Message Recorded...")
+    const toasts = toast.loading("Submitting...")
+    try {
+      const {data} = await api.post("/api/portfolio/contact",{
+        name,email,message
+      })
+      if(data.success){
+        toast.success(data.message)
+        setName("")
+        setEmail("")
+        setMessage("")
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || "Something Went Wrong.")
+    } finally {
+      toast.dismiss(toasts)
       setLoading(false)
-    }, 3000)
+    }
   }
 
   return (
@@ -212,13 +226,14 @@ const Contact = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: 0.3 }}
+                title="Please Enter Your Actual Email, so Kishan Patel will Send You Email."
               />
             </div>
 
             <div className='w-full p-2'>
               <motion.textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
                 placeholder='Your Message'
                 className='border outline-4 outline-transparent focus:border-transparent focus:outline-black w-full p-[5px_20px] rounded-lg transition-all duration-300'
                 rows={5}

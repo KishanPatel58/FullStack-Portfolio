@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
-import { addCategory, addEducation, addExperience, addHobby, addProject, addSkill, addSocialProfile, addTechStack, deleteCategory, deleteEducation, deleteExperience, deleteHobby, deleteProfile, deleteProject, deleteSkill, deleteSocialProfile, deleteTechStack, findCategory, getAdminProfile, getEducations, getExperience, getProjectById, getProjects, getSkills, getTechStacks, updateAboutInfo, updateEducation, updateExperience, updateProfile, updateProject, updateSkill, updateTechStack, uploadProfile } from "../controllers/admin.controller.js";
+import { addCategory, addEducation, addExperience, addHobby, addProject, addSkill, addSocialProfile, addTechStack, deleteCategory, deleteEducation, deleteExperience, deleteHobby, deleteNotification, deleteProfile, deleteProject, deleteSkill, deleteSocialProfile, deleteTechStack, findCategory, getAdminProfile, getEducations, getExperience, getNotifications, getProjectById, getProjects, getSkills, getTechStacks, markAllAsReadNotification, markAsReadNotification, publishResumeImage, replyNotification, updateAboutInfo, updateEducation, updateExperience, updateProfile, updateProject, updateResumeDetails, updateSkill, updateTechStack, uploadProfile } from "../controllers/admin.controller.js";
 const adminRouter = Router()
 
 adminRouter.use(authMiddleware)
@@ -148,5 +148,29 @@ adminRouter.post("/socials/add",upload.single("icon"), addSocialProfile)
 
 // Delete Social.
 adminRouter.delete("/socials/:id/delete", deleteSocialProfile)
+
+
+
+// Get Contact Notification.
+adminRouter.get("/notifications", getNotifications)
+
+// Mark as Read.
+adminRouter.put("/notifications/:id/read", markAsReadNotification)
+
+// Mark all as Read.
+adminRouter.put("/notifications", markAllAsReadNotification)
+
+// Delete Notification.
+adminRouter.delete("/notifications/:id", deleteNotification)
+
+// Reply Message.
+adminRouter.post("/notifications/:id/reply", replyNotification)
+
+
+// Resume Details Update
+adminRouter.put("/resume/details", updateResumeDetails);
+
+// Publish resume to Portfolio Website.
+adminRouter.post("/resume/publish", upload.single("resume"), publishResumeImage);
 
 export default adminRouter;
