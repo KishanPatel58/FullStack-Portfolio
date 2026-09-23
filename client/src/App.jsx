@@ -1,60 +1,122 @@
-import React, { useState } from "react";
-import { Route, Routes } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
+import { useState } from 'react'
+import heroImg from './assets/hero.png'
+import reactLogo from './assets/react.svg'
+import viteLogo from './assets/vite.svg'
+import './App.css'
 
-import Home from "./pages/Home";
-import Landing from "./components/ui/Landing";
-import Layout from "./components/Layout";
-import Navbar from "./components/Navbar";
-import NotFound from "./pages/404/NotFound";
-import About from "./pages/About";
-import Projects from "./pages/Projects";
-import SelectedProject from "./pages/SelectedProject";
-import Contact from "./pages/Contact";
-import { Toaster } from "react-hot-toast"
-import Resume from "./pages/Resume";
+function App() {
+  const [count, setCount] = useState(0)
 
-const SHOW_LANDING_ANIMATION =
-  import.meta.env.VITE_SHOW_LANDING === "true";
-
-const App = () => {
-  const [showLanding, setShowLanding] = useState(
-    SHOW_LANDING_ANIMATION
-  );
-  const [homeLoaded, setHomeLoaded] = useState(false);
   return (
     <>
-      <Toaster position="top-center" />
-      <Routes>
-        {/* Layout */}
-        <Route
-          path="/"
-          element={<Layout />}
+      <section id="center">
+        <div className="hero">
+          <img src={heroImg} className="base" width="170" height="179" alt="" />
+          <img src={reactLogo} className="framework" alt="React logo" />
+          <img src={viteLogo} className="vite" alt="Vite logo" />
+        </div>
+        <div>
+          <h1>Get started</h1>
+          <p>
+            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
+          </p>
+        </div>
+        <button
+          type="button"
+          className="counter"
+          onClick={() => setCount((count) => count + 1)}
         >
-          <Route path="/" element={<Home
-            onLoaded={() => setHomeLoaded(true)}
-          />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/projects/:id" element={<SelectedProject />} />
-          <Route path="/contact" element={<Contact />} />
-          {/* Resume Route */}
-          <Route path="/resume" element={<Resume />} />
-        </Route>
-        {/* Page not Found */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          Count is {count}
+        </button>
+      </section>
 
-      <AnimatePresence>
-        {showLanding && (
-          <Landing
-            homeLoaded={homeLoaded}
-            onComplete={() => setShowLanding(false)}
-          />
-        )}
-      </AnimatePresence>
+      <div className="ticks"></div>
+
+      <section id="next-steps">
+        <div id="docs">
+          <svg className="icon" role="presentation" aria-hidden="true">
+            <use href="/icons.svg#documentation-icon"></use>
+          </svg>
+          <h2>Documentation</h2>
+          <p>Your questions, answered</p>
+          <ul>
+            <li>
+              <a href="https://vite.dev/" target="_blank">
+                <img className="logo" src={viteLogo} alt="" />
+                Explore Vite
+              </a>
+            </li>
+            <li>
+              <a href="https://react.dev/" target="_blank">
+                <img className="button-icon" src={reactLogo} alt="" />
+                Learn more
+              </a>
+            </li>
+          </ul>
+        </div>
+        <div id="social">
+          <svg className="icon" role="presentation" aria-hidden="true">
+            <use href="/icons.svg#social-icon"></use>
+          </svg>
+          <h2>Connect with us</h2>
+          <p>Join the Vite community</p>
+          <ul>
+            <li>
+              <a href="https://github.com/vitejs/vite" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#github-icon"></use>
+                </svg>
+                GitHub
+              </a>
+            </li>
+            <li>
+              <a href="https://chat.vite.dev/" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#discord-icon"></use>
+                </svg>
+                Discord
+              </a>
+            </li>
+            <li>
+              <a href="https://x.com/vite_js" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#x-icon"></use>
+                </svg>
+                X.com
+              </a>
+            </li>
+            <li>
+              <a href="https://bsky.app/profile/vite.dev" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#bluesky-icon"></use>
+                </svg>
+                Bluesky
+              </a>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <div className="ticks"></div>
+      <section id="spacer"></section>
     </>
-  );
-};
+  )
+}
 
-export default App;
+export default App
