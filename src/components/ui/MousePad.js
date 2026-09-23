@@ -1,5 +1,5 @@
 "use client"
-import {useState, useEffect} from 'react'
+import { useState, useEffect } from 'react'
 import Cursor from './Cursor';
 
 export default function MousePad() {
@@ -20,8 +20,8 @@ export default function MousePad() {
     }, []);
 
     return (
-        <div className='w-full min-h-screen fixed top-0 left-0 z-1'>
-            <Cursor clientX={clientX} clientY={clientY}/>
+        <div className="fixed inset-0 z-[3000] pointer-events-none">
+            <Cursor clientX={clientX} clientY={clientY} />
         </div>
-    )
+    );
 }

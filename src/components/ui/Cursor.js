@@ -7,7 +7,7 @@ export default function Cursor({
 }) {
     return (
         <div
-            className="w-10 h-10 border-3 fixed z-[5000] pointer-events-none rounded-full flex items-center justify-center"
+            className="w-10 h-10 border-3 fixed z-[9999] pointer-events-none rounded-full flex items-center justify-center"
             style={{
                 left: `${clientX}px`,
                 top: `${clientY}px`,
@@ -15,9 +15,8 @@ export default function Cursor({
                 transform: "translate(-50%, -50%)",
             }}
         >
-            {/* Dot */}
             <span
-                className="w-2 h-2 rounded-full transition-all duration-500"
+                className="w-2 h-2 rounded-full"
                 style={{
                     backgroundColor: color,
                 }}
